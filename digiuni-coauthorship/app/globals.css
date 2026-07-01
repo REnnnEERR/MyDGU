@@ -1,0 +1,112 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #0a0a0a;
+
+  /* DigiUni палітра */
+  --du-black: #0a0a0a;
+  --du-white: #ffffff;
+
+  --du-yellow: #f5e94b;
+  /* фон hero-блоку */
+  --du-yellow-soft: #faf3a8;
+  /* світліша частина градієнта hero */
+  --du-yellow-deep: #f6c81a;
+  /* акцентний жовтий (ромби, кнопки) */
+
+  --du-blue: #2f2fe0;
+  /* акцентний синій (ромби, посилання) */
+  --du-blue-dark: #1e1ec2;
+
+  --du-lime-bg: #eef7b8;
+  /* фон секції "Категорії курсів" */
+  --du-lime-card: #d7ec5c;
+  /* картка "Цифровий репозиторій" */
+  --du-olive: #4d5026;
+  /* кнопка "Вже незабаром" на лаймовій картці */
+
+  --du-gray-50: #f8f8f6;
+  --du-gray-100: #f1f1ee;
+  --du-gray-200: #e3e3de;
+  --du-gray-500: #6b6b65;
+  --du-gray-700: #3a3a36;
+
+  --du-radius-pill: 999px;
+  --du-radius-card: 24px;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-manrope);
+  --font-mono: var(--font-geist-mono);
+
+  --color-du-black: var(--du-black);
+  --color-du-white: var(--du-white);
+  --color-du-yellow: var(--du-yellow);
+  --color-du-yellow-soft: var(--du-yellow-soft);
+  --color-du-yellow-deep: var(--du-yellow-deep);
+  --color-du-blue: var(--du-blue);
+  --color-du-blue-dark: var(--du-blue-dark);
+  --color-du-lime-bg: var(--du-lime-bg);
+  --color-du-lime-card: var(--du-lime-card);
+  --color-du-olive: var(--du-olive);
+  --color-du-gray-50: var(--du-gray-50);
+  --color-du-gray-100: var(--du-gray-100);
+  --color-du-gray-200: var(--du-gray-200);
+  --color-du-gray-500: var(--du-gray-500);
+  --color-du-gray-700: var(--du-gray-700);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-manrope), Arial, Helvetica, sans-serif;
+}
+
+/* Базовий стиль "таблеткових" кнопок DigiUni */
+.btn-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  border-radius: var(--du-radius-pill);
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.btn-pill-black {
+  background: var(--du-black);
+  color: var(--du-white);
+}
+
+.btn-pill-black:hover {
+  background: var(--du-gray-700);
+}
+
+.btn-pill-outline {
+  background: transparent;
+  color: var(--du-black);
+  border: 1.5px solid var(--du-black);
+}
+
+.btn-pill-outline:hover {
+  background: var(--du-black);
+  color: var(--du-white);
+}
+
+.btn-pill-blue {
+  background: var(--du-blue);
+  color: var(--du-white);
+}
+
+.btn-pill-blue:hover {
+  background: var(--du-blue-dark);
+}
