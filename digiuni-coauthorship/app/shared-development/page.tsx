@@ -1,155 +1,300 @@
-'use client';
-import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { specialties } from '@/data/specialties';
-import { roles } from '@/data/roles';
-import { ModuleBreadcrumb } from '@/components/Header';
-import type { Course } from '@/types/course';
+"use client";
+import { useState, useEffect, useCallback, useRef } from "react";
+import Link from "next/link";
+import { specialties } from "@/data/specialties";
+import { roles } from "@/data/roles";
+import { ModuleBreadcrumb } from "@/components/Header";
+import { SharedDevelopmentHeader } from "@/components/SharedDevelopmentHeader";
+import { api } from "@/context/AuthContext";
+import type { Course, Profile } from "@/types/course";
+import { SearchIcon, ChevronDownIcon, ChevronUpIcon } from "@/components/icons";
+
+const PAGE_SIZE = 4;
+
+const GRADIENT_BORDER = {
+  background:
+    "radial-gradient(96.04% 161.51% at 3.33% -13.12%, #A6C7BB 0%, #C1BEB3 8.33%, #E4B4A9 23.96%, #E7B2A9 40.9%, #E9B2BC 58.38%, #9086B7 71.65%, #7271BD 82.77%, #4A54C6 90.28%, #2833D0 100%)",
+};
 
 export default function SharedDevelopment() {
   const [courses, setCourses] = useState<Course[]>([]);
-  const [showFilter, setShowFilter] = useState(false);
-  const [search, setSearch] = useState('');
-  const [selectedSpec, setSelectedSpec] = useState('');
-  const [selectedRole, setSelectedRole] = useState('');
+  const [authorNames, setAuthorNames] = useState<Record<string, string>>({});
+  const [isLoading, setIsLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [selectedSpec, setSelectedSpec] = useState("");
+  const [selectedRole, setSelectedRole] = useState("");
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+
+  const [showSpecFilter, setShowSpecFilter] = useState(false);
+  const [showRoleFilter, setShowRoleFilter] = useState(false);
+  const specFilterRef = useRef<HTMLDivElement>(null);
+  const roleFilterRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    fetch('/api/courses')
-      .then(res => res.json())
-      .then((data: Course[]) => setCourses(data.filter(c => c.status === 'Відкрито')));
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        specFilterRef.current &&
+        !specFilterRef.current.contains(e.target as Node)
+      ) {
+        setShowSpecFilter(false);
+      }
+      if (
+        roleFilterRef.current &&
+        !roleFilterRef.current.contains(e.target as Node)
+      ) {
+        setShowRoleFilter(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const filteredCourses = courses.filter(course => {
-    return (
-      course.title.toLowerCase().includes(search.toLowerCase()) &&
-      (selectedSpec === '' || course.specialty.includes(selectedSpec)) &&
-      (selectedRole === '' || course.requiredRoles.includes(selectedRole))
-    );
-  });
+  const loadCourses = useCallback(async () => {
+    setIsLoading(true);
+    const params = new URLSearchParams({ status: "Відкрито" });
+    if (search) params.set("search", search);
+    if (selectedSpec) params.set("specialty", selectedSpec);
+    if (selectedRole) params.set("role", selectedRole);
 
-  const activeFiltersCount = [search, selectedSpec, selectedRole].filter(Boolean).length;
+    try {
+      const list = await api.get<Course[]>(`/api/courses?${params.toString()}`);
+      setCourses(list);
+      setVisibleCount(PAGE_SIZE);
+
+      const uniqueAuthorIds = Array.from(new Set(list.map((c) => c.authorId)));
+      const entries = await Promise.all(
+        uniqueAuthorIds.map(async (id) => {
+          try {
+            const profile = await api.get<Profile>(`/api/profile/${id}`);
+            return [id, profile.fullName] as const;
+          } catch {
+            return [id, "Автор курсу"] as const;
+          }
+        }),
+      );
+      setAuthorNames(Object.fromEntries(entries));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [search, selectedSpec, selectedRole]);
+
+  useEffect(() => {
+    loadCourses();
+  }, [loadCourses]);
+
+  const visibleCourses = courses.slice(0, visibleCount);
+  const hasMore = visibleCount < courses.length;
 
   return (
     <div className="flex flex-col flex-1">
-      <ModuleBreadcrumb current="Спільна розробка курсів" />
+      <ModuleBreadcrumb items={[{ label: "Спільна розробка курсів" }]} />
 
-      <div className="max-w-6xl mx-auto w-full px-6 py-10">
-        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-8">
-          Спільна розробка курсів
-        </h1>
+      <div className="max-w-[1440px] mx-auto w-full px-20 pt-4 pb-10">
+        <SharedDevelopmentHeader active="catalog" />
 
-        {/* Навігаційна панель дій */}
-        <div className="flex flex-wrap gap-3 justify-between items-center mb-10 bg-du-gray-50 p-4 rounded-2xl border border-du-gray-200">
-          <div className="flex flex-wrap gap-3">
-            <Link href="/shared-development/my-courses" className="btn-pill btn-pill-outline text-sm py-2 px-4">
-              📂 Мої курси
-            </Link>
-            <Link href="/shared-development/profile" className="btn-pill btn-pill-outline text-sm py-2 px-4">
-              👤 Анкета автора/співавтора
-            </Link>
-            <button
-              onClick={() => setShowFilter(true)}
-              className="btn-pill btn-pill-outline text-sm py-2 px-4"
-            >
-              ⏳ Фільтри{activeFiltersCount > 0 ? ` (${activeFiltersCount})` : ''}
-            </button>
+        <div className="flex flex-nowrap items-center gap-3 mb-8">
+          <div className="relative flex-1">
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Пошук за назвою ..."
+              className="w-full h-[48px] bg-transparent pl-1 pr-11 text-sm focus:outline-none placeholder:text-du-gray-500"
+              style={{
+                ...GRADIENT_BORDER,
+                backgroundSize: "100% 2px",
+                backgroundRepeat: "no-repeat",
+                backgroundPosition: "bottom",
+              }}
+            />
+            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-du-gray-500">
+              <SearchIcon className="w-4 h-4" />
+            </span>
           </div>
 
-          <Link href="/shared-development/course/new" className="btn-pill btn-pill-black text-sm py-2 px-5">
-            ➕ Створити курс
-          </Link>
+          <div
+            className="relative shrink-0 w-[252px] rounded-full p-[2px]"
+            style={GRADIENT_BORDER}
+            ref={specFilterRef}
+          >
+            <div className="relative rounded-full bg-du-white">
+              <button
+                type="button"
+                onClick={() => setShowSpecFilter((v) => !v)}
+                className="w-full h-[44px] rounded-full bg-transparent pl-5 pr-9 text-sm text-left truncate"
+              >
+                <span
+                  className={
+                    selectedSpec ? "text-du-black" : "text-du-gray-500"
+                  }
+                >
+                  {selectedSpec || "Спеціальність"}
+                </span>
+              </button>
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-du-gray-500 pointer-events-none">
+                {showSpecFilter ? (
+                  <ChevronUpIcon className="w-4 h-4" />
+                ) : (
+                  <ChevronDownIcon className="w-4 h-4" />
+                )}
+              </span>
+
+              {showSpecFilter && (
+                <div className="absolute z-20 mt-2 w-full max-h-64 overflow-y-auto bg-du-white border border-du-gray-200 rounded-2xl shadow-lg p-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedSpec("");
+                      setShowSpecFilter(false);
+                    }}
+                    className="block w-full text-left text-sm p-2 hover:bg-du-gray-50 rounded-lg text-du-gray-500"
+                  >
+                    Усі спеціальності
+                  </button>
+                  {specialties.map((s) => {
+                    const value = `${s.code} ${s.name}`;
+                    return (
+                      <button
+                        type="button"
+                        key={s.code}
+                        onClick={() => {
+                          setSelectedSpec(value);
+                          setShowSpecFilter(false);
+                        }}
+                        className="block w-full text-left text-sm p-2 hover:bg-du-gray-50 rounded-lg"
+                      >
+                        {value}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div
+            className="relative shrink-0 w-[252px] rounded-full p-[2px]"
+            style={GRADIENT_BORDER}
+            ref={roleFilterRef}
+          >
+            <div className="relative rounded-full bg-du-white">
+              <button
+                type="button"
+                onClick={() => setShowRoleFilter((v) => !v)}
+                className="w-full h-[44px] rounded-full bg-transparent pl-5 pr-9 text-sm text-left truncate"
+              >
+                <span
+                  className={
+                    selectedRole ? "text-du-black" : "text-du-gray-500"
+                  }
+                >
+                  {selectedRole || "Роль співавтора"}
+                </span>
+              </button>
+              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-du-gray-500 pointer-events-none">
+                {showRoleFilter ? (
+                  <ChevronUpIcon className="w-4 h-4" />
+                ) : (
+                  <ChevronDownIcon className="w-4 h-4" />
+                )}
+              </span>
+
+              {showRoleFilter && (
+                <div className="absolute z-20 mt-2 w-full max-h-64 overflow-y-auto bg-du-white border border-du-gray-200 rounded-2xl shadow-lg p-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedRole("");
+                      setShowRoleFilter(false);
+                    }}
+                    className="block w-full text-left text-sm p-2 hover:bg-du-gray-50 rounded-lg text-du-gray-500"
+                  >
+                    Усі ролі
+                  </button>
+                  {roles.map((r, i) => (
+                    <button
+                      type="button"
+                      key={i}
+                      onClick={() => {
+                        setSelectedRole(r);
+                        setShowRoleFilter(false);
+                      }}
+                      className="block w-full text-left text-sm p-2 hover:bg-du-gray-50 rounded-lg"
+                    >
+                      {r}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
-        {/* Список відкритих курсів */}
-        <h2 className="text-xl font-bold text-du-gray-700 mb-4">Курси в пошуках співавтора</h2>
-
-        {filteredCourses.length === 0 ? (
+        {isLoading ? (
+          <p className="text-du-gray-500 py-10 text-center">Завантаження...</p>
+        ) : courses.length === 0 ? (
           <p className="text-du-gray-500 italic py-10 text-center">
             Курсів за цими критеріями не знайдено.
           </p>
         ) : (
-          <div className="grid md:grid-cols-2 gap-6">
-            {filteredCourses.map((course) => (
-              <Link
-                href={`/shared-development/course/${course.id}`}
-                key={course.id}
-                className="block p-6 bg-du-white rounded-3xl border border-du-gray-200 hover:border-du-black transition"
-              >
-                <h3 className="text-xl font-bold text-du-black mb-2">{course.title}</h3>
-                <p className="text-du-gray-700 text-sm line-clamp-2 mb-4">{course.description}</p>
-                <div className="text-xs text-du-gray-500 mb-3">
-                  <strong className="text-du-gray-700">Спеціальність:</strong> {course.specialty}
-                </div>
-                <div className="flex flex-wrap gap-1.5 mt-2">
-                  {course.requiredRoles.map((r, idx) => (
-                    <span
-                      key={idx}
-                      className="bg-du-yellow-soft text-du-gray-700 text-xs px-2.5 py-1 rounded-full font-medium"
-                    >
-                      {r}
-                    </span>
-                  ))}
-                </div>
-                <div className="mt-4 text-xs text-right text-du-gray-500">Автор: {course.author}</div>
-              </Link>
-            ))}
-          </div>
-        )}
-
-        {/* Модалка фільтрації */}
-        {showFilter && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-            <div className="bg-du-white p-6 rounded-3xl max-w-md w-full shadow-xl">
-              <h3 className="text-xl font-bold mb-5">Налаштування фільтрів</h3>
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-semibold mb-1.5">Пошук за назвою</label>
-                  <input
-                    type="text"
-                    value={search}
-                    onChange={e => setSearch(e.target.value)}
-                    placeholder="Введіть назву..."
-                    className="w-full border border-du-gray-200 p-2.5 rounded-xl focus:outline-none focus:border-du-black"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold mb-1.5">Спеціальність</label>
-                  <select
-                    value={selectedSpec}
-                    onChange={e => setSelectedSpec(e.target.value)}
-                    className="w-full border border-du-gray-200 p-2.5 rounded-xl text-sm bg-du-white focus:outline-none focus:border-du-black"
-                  >
-                    <option value="">Усі спеціальності</option>
-                    {specialties.map(s => (
-                      <option key={s.code} value={s.name}>{s.code} {s.name}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold mb-1.5">Роль співавтора</label>
-                  <select
-                    value={selectedRole}
-                    onChange={e => setSelectedRole(e.target.value)}
-                    className="w-full border border-du-gray-200 p-2.5 rounded-xl text-sm bg-du-white focus:outline-none focus:border-du-black"
-                  >
-                    <option value="">Усі ролі</option>
-                    {roles.map((r, i) => <option key={i} value={r}>{r}</option>)}
-                  </select>
-                </div>
-              </div>
-              <div className="mt-7 flex justify-end gap-2">
-                <button
-                  onClick={() => { setSearch(''); setSelectedSpec(''); setSelectedRole(''); }}
-                  className="px-4 py-2 text-du-gray-500 hover:text-du-black text-sm font-medium"
+          <>
+            <div className="grid md:grid-cols-2 gap-6">
+              {visibleCourses.map((course) => (
+                <Link
+                  href={`/shared-development/course/${course._id}`}
+                  key={course._id}
+                  className="group block p-6 bg-du-gray-100 hover:bg-[rgba(204,229,255,1)] transition"
                 >
-                  Скинути
-                </button>
-                <button onClick={() => setShowFilter(false)} className="btn-pill btn-pill-black text-sm py-2 px-5">
-                  Застосувати
+                  <h3
+                    className="inline-block text-du-black mb-2 underline decoration-transparent group-hover:decoration-du-black transition-colors"
+                    style={{
+                      fontFamily: '"Diya", var(--font-manrope), sans-serif',
+                      fontWeight: 600,
+                      fontSize: "28px",
+                      lineHeight: "32px",
+                      letterSpacing: "-0.56px",
+                      verticalAlign: "middle",
+                      textDecorationStyle: "solid",
+                      textUnderlineOffset: "4px",
+                      textDecorationThickness: "2px",
+                    }}
+                  >
+                    {course.title}
+                  </h3>
+                  <p className="text-du-gray-700 text-sm line-clamp-3 mb-3">
+                    {course.description}
+                  </p>
+                  <div className="text-xs text-du-gray-500 mb-4">
+                    {authorNames[course.authorId] || "..."}
+                  </div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {course.requiredRoles.map((r, idx) => (
+                      <span
+                        key={idx}
+                        className="bg-du-white text-du-gray-700 border border-du-gray-200 text-xs px-3 py-1 rounded-full font-medium"
+                      >
+                        {r}
+                      </span>
+                    ))}
+                    <span className="bg-du-black text-du-white text-xs px-3 py-1 rounded-full font-medium">
+                      {course.specialty}
+                    </span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+
+            {hasMore && (
+              <div className="flex justify-center mt-10">
+                <button
+                  onClick={() => setVisibleCount((v) => v + PAGE_SIZE)}
+                  className="btn-pill btn-pill-outline text-sm py-2.5 px-6"
+                >
+                  Показати ще курси
                 </button>
               </div>
-            </div>
-          </div>
+            )}
+          </>
         )}
       </div>
     </div>

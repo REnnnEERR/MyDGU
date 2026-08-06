@@ -1,219 +1,665 @@
-'use client';
-import { useState, useEffect, use } from 'react';
-import { useRouter } from 'next/navigation';
-import { specialties } from '@/data/specialties';
-import { roles } from '@/data/roles';
-import { ModuleBreadcrumb } from '@/components/Header';
-import type { CourseApplication } from '@/types/course';
+"use client";
+import { useState, useEffect, use, useCallback, useRef } from "react";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
+import { specialties } from "@/data/specialties";
+import { roles } from "@/data/roles";
+import { ModuleBreadcrumb } from "@/components/Header";
+import { SharedDevelopmentHeader } from "@/components/SharedDevelopmentHeader";
+import { SearchIcon, ChevronDownIcon, ChevronUpIcon } from "@/components/icons";
+import { api, useAuth, ApiError } from "@/context/AuthContext";
+import { ApplicantProfileModal } from "@/components/ApplicantProfileModal";
+import type { Course, CourseApplication, Profile } from "@/types/course";
 
-export default function CourseFormPage({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = use(params);
-  const isNew = resolvedParams.id === 'new';
-  const router = useRouter();
+export default function CourseViewPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = use(params);
+  const { user } = useAuth();
 
-  const [isEditing, setIsEditing] = useState(isNew);
-  const [isAuthor, setIsAuthor] = useState(true); // Для демонстрації перемикаємо вручну нижче
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [specialty, setSpecialty] = useState('');
+  const [course, setCourse] = useState<Course | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [specialty, setSpecialty] = useState("");
   const [requiredRoles, setRequiredRoles] = useState<string[]>([]);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const [showSpecialtyPicker, setShowSpecialtyPicker] = useState(false);
+  const specialtyPickerRef = useRef<HTMLDivElement>(null);
+
   const [applications, setApplications] = useState<CourseApplication[]>([]);
+  const [applicantNames, setApplicantNames] = useState<Record<string, string>>(
+    {},
+  );
+
+  const [myApplications, setMyApplications] = useState<CourseApplication[]>([]);
+  const [selectedApplyRoles, setSelectedApplyRoles] = useState<string[]>([]);
+  const [isApplying, setIsApplying] = useState(false);
+  const [viewedApplicantId, setViewedApplicantId] = useState<string | null>(
+    null,
+  );
+
+  const isAuthor = !!(user && course && course.authorId === user.id);
+
+  const searchParams = useSearchParams();
 
   useEffect(() => {
-    if (!isNew) {
-      fetch('/api/courses')
-        .then(res => res.json())
-        .then(data => {
-          const found = data.find((c: { id: string }) => c.id === resolvedParams.id);
-          if (found) {
-            setTitle(found.title);
-            setDescription(found.description);
-            setSpecialty(found.specialty);
-            setRequiredRoles(found.requiredRoles);
-            setApplications(found.applications);
-            // Для тесту: якщо id=2, зробимо вигляд, що ми не автор
-            if (found.id === '2') setIsAuthor(false);
-          }
-        });
+    if (isAuthor && searchParams.get("edit") === "1" && !isEditing) {
+      handleStartEditing();
     }
-  }, [resolvedParams.id, isNew]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAuthor, course]);
 
-  const handleRoleToggle = (role: string) => {
-    setRequiredRoles(prev => prev.includes(role) ? prev.filter(r => r !== role) : [...prev, role]);
-  };
+  const loadCourse = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const data = await api.get<Course>(`/api/courses/${id}`);
+      setCourse(data);
+      setTitle(data.title);
+      setDescription(data.description);
+      setSpecialty(data.specialty);
+      setRequiredRoles(data.requiredRoles);
+    } catch {
+      setNotFound(true);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [id]);
 
-  const handleSave = async () => {
-    if (isNew) {
-      await fetch('/api/courses', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, description, specialty, requiredRoles })
+  useEffect(() => {
+    loadCourse();
+  }, [loadCourse]);
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (
+        specialtyPickerRef.current &&
+        !specialtyPickerRef.current.contains(e.target as Node)
+      ) {
+        setShowSpecialtyPicker(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    if (!course || !user || course.authorId !== user.id) return;
+    api
+      .get<CourseApplication[]>(`/api/applications/course/${course._id}`)
+      .then(async (list) => {
+        setApplications(list);
+        const uniqueIds = Array.from(new Set(list.map((a) => a.applicantId)));
+        const entries = await Promise.all(
+          uniqueIds.map(async (uid) => {
+            try {
+              const profile = await api.get<Profile>(`/api/profile/${uid}`);
+              return [uid, profile.fullName] as const;
+            } catch {
+              return [uid, "Кандидат"] as const;
+            }
+          }),
+        );
+        setApplicantNames(Object.fromEntries(entries));
       });
-      router.push('/shared-development');
-    } else {
+  }, [course, user]);
+
+  useEffect(() => {
+    if (!user || !course || isAuthor) return;
+    api
+      .get<CourseApplication[]>("/api/applications/mine")
+      .then((list) =>
+        setMyApplications(list.filter((a) => a.courseId === course._id)),
+      );
+  }, [user, course, isAuthor]);
+
+  function handleRoleToggle(role: string) {
+    setRequiredRoles((prev) =>
+      prev.includes(role) ? prev.filter((r) => r !== role) : [...prev, role],
+    );
+  }
+
+  function handleStartEditing() {
+    if (!course) return;
+    setTitle(course.title);
+    setDescription(course.description);
+    setSpecialty(course.specialty);
+    setRequiredRoles(course.requiredRoles);
+    setError(null);
+    setIsEditing(true);
+  }
+
+  async function handleSave() {
+    if (!course) return;
+    setError(null);
+    setIsSaving(true);
+    try {
+      const updated = await api.put<Course>(`/api/courses/${course._id}`, {
+        title,
+        description,
+        specialty,
+        requiredRoles,
+      });
+      setCourse(updated);
       setIsEditing(false);
+    } catch (err) {
+      setError(
+        err instanceof ApiError ? err.message : "Не вдалося зберегти курс",
+      );
+    } finally {
+      setIsSaving(false);
     }
-  };
+  }
+
+  async function handleCloseEnrollment() {
+    if (!course) return;
+    const updated = await api.put<Course>(`/api/courses/${course._id}`, {
+      status: "Закрито",
+    });
+    setCourse(updated);
+  }
+
+  async function handleApplicationStatus(
+    applicationId: string,
+    status: "підтверджено" | "відхилено",
+  ) {
+    const updated = await api.patch<CourseApplication>(
+      `/api/applications/${applicationId}`,
+      {
+        status,
+      },
+    );
+    setApplications((prev) =>
+      prev.map((a) => (a._id === applicationId ? updated : a)),
+    );
+  }
+
+  function toggleApplyRole(role: string) {
+    setSelectedApplyRoles((prev) =>
+      prev.includes(role) ? prev.filter((r) => r !== role) : [...prev, role],
+    );
+  }
+
+  async function handleApplyAsCoauthor() {
+    if (!course || selectedApplyRoles.length === 0) return;
+    setError(null);
+    setIsApplying(true);
+    try {
+      const created = await Promise.all(
+        selectedApplyRoles.map((role) =>
+          api.post<CourseApplication>("/api/applications", {
+            courseId: course._id,
+            type: "співавтор",
+            role,
+          }),
+        ),
+      );
+      setMyApplications((prev) => [...prev, ...created]);
+      setSelectedApplyRoles([]);
+    } catch (err) {
+      setError(
+        err instanceof ApiError ? err.message : "Не вдалося подати заявку",
+      );
+    } finally {
+      setIsApplying(false);
+    }
+  }
+
+  async function handleApplyAsListener() {
+    if (!course) return;
+    setError(null);
+    setIsApplying(true);
+    try {
+      const application = await api.post<CourseApplication>(
+        "/api/applications",
+        {
+          courseId: course._id,
+          type: "слухач",
+        },
+      );
+      setMyApplications((prev) => [...prev, application]);
+    } catch (err) {
+      setError(
+        err instanceof ApiError ? err.message : "Не вдалося подати заявку",
+      );
+    } finally {
+      setIsApplying(false);
+    }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col flex-1">
+        <ModuleBreadcrumb
+          items={[
+            { label: "Спільна розробка курсів", href: "/shared-development" },
+          ]}
+        />
+        <div className="max-w-[1440px] mx-auto w-full px-20 py-10 text-du-gray-500">
+          Завантаження...
+        </div>
+      </div>
+    );
+  }
+
+  if (notFound || !course) {
+    return (
+      <div className="flex flex-col flex-1">
+        <ModuleBreadcrumb
+          items={[
+            { label: "Спільна розробка курсів", href: "/shared-development" },
+          ]}
+        />
+        <div className="max-w-[1440px] mx-auto w-full px-20 py-10 text-du-gray-500">
+          Курс не знайдено.
+        </div>
+      </div>
+    );
+  }
+
+  const hasAppliedAsCoauthor = myApplications.some(
+    (a) => a.type === "співавтор",
+  );
+  const hasAppliedAsListener = myApplications.some((a) => a.type === "слухач");
 
   return (
     <div className="flex flex-col flex-1">
-      <ModuleBreadcrumb current={isNew ? 'Створення курсу' : `Курс: ${title || '...'}`} />
+      <ModuleBreadcrumb
+        items={[
+          { label: "Спільна розробка курсів", href: "/shared-development" },
+          { label: course.title },
+        ]}
+      />
 
-      <div className="max-w-4xl mx-auto w-full px-6 py-10">
-        <div className="bg-du-white border border-du-gray-200 rounded-3xl p-7 relative">
-          {!isNew && isAuthor && (
-            <button
-              onClick={() => setIsEditing(!isEditing)}
-              className="absolute top-7 right-7 btn-pill btn-pill-outline text-sm py-1.5 px-4"
-            >
-              {isEditing ? '💾 Скасувати' : '✏️ Редагувати'}
-            </button>
-          )}
+      <div className="max-w-[1440px] mx-auto w-full px-20 pt-4 pb-10">
+        {isEditing ? (
+          <>
+            <SharedDevelopmentHeader
+              active="none"
+              subtitle="Опишіть курс, оберіть спеціальність і позначте, які ролі співавторів вам потрібні — від графічного дизайнера до фахівця зі ШІ."
+            />
 
-          {/* Перемикач для демонстрації презентації замовнику */}
-          {!isNew && (
-            <div className="mb-5 p-2.5 bg-du-yellow-soft rounded-xl text-xs text-du-gray-700 flex gap-4">
-              <span className="font-semibold">Режим демонстрації:</span>
-              <label className="flex items-center gap-1.5">
-                <input type="checkbox" checked={isAuthor} onChange={e => setIsAuthor(e.target.checked)} /> Я Автор курсу
-              </label>
-            </div>
-          )}
+            <div className="max-w-2xl">
+              <h2 className="inline-block text-2xl font-bold border-b-2 border-du-blue pb-1.5 mb-8">
+                Редагування курсу
+              </h2>
 
-          <h1 className="text-2xl font-extrabold tracking-tight mb-7 pr-32">
-            {isNew ? 'Створення спільного курсу' : `Курс: ${title}`}
-          </h1>
-
-          <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-semibold mb-1.5">Назва курсу</label>
-              <input
-                type="text"
-                disabled={!isEditing}
-                value={title}
-                onChange={e => setTitle(e.target.value)}
-                placeholder="Наприклад: Біологія"
-                className="w-full p-2.5 border border-du-gray-200 rounded-xl disabled:bg-du-gray-50 focus:outline-none focus:border-du-black"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold mb-1.5">Опис курсу</label>
-              <textarea
-                disabled={!isEditing}
-                value={description}
-                onChange={e => setDescription(e.target.value)}
-                rows={4}
-                placeholder="Короткий опис цілей та задач курсу..."
-                className="w-full p-2.5 border border-du-gray-200 rounded-xl disabled:bg-du-gray-50 focus:outline-none focus:border-du-black"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-semibold mb-1.5">Спеціальність</label>
-              {isEditing ? (
-                <select
-                  value={specialty}
-                  onChange={e => setSpecialty(e.target.value)}
-                  className="w-full p-2.5 border border-du-gray-200 rounded-xl focus:outline-none focus:border-du-black"
-                >
-                  <option value="">Оберіть спеціальність...</option>
-                  {specialties.map(s => (
-                    <option key={s.code} value={`${s.code} ${s.name}`}>{s.code} {s.name}</option>
-                  ))}
-                </select>
-              ) : (
-                <div className="p-2.5 bg-du-gray-50 border border-du-gray-200 rounded-xl text-du-gray-700">
-                  {specialty || 'Не вказано'}
-                </div>
+              {error && (
+                <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl p-2.5 mb-5">
+                  {error}
+                </p>
               )}
-            </div>
 
-            <div>
-              <label className="block text-sm font-semibold mb-2">Потрібні співавтори з ролями</label>
-              {isEditing ? (
-                <div className="grid grid-cols-2 gap-2 max-h-40 overflow-y-auto p-2 border border-du-gray-200 rounded-xl">
-                  {roles.map(r => (
-                    <label key={r} className="flex items-center gap-2 text-sm p-1 hover:bg-du-gray-50 rounded-lg cursor-pointer">
-                      <input type="checkbox" checked={requiredRoles.includes(r)} onChange={() => handleRoleToggle(r)} /> {r}
-                    </label>
-                  ))}
+              <div className="space-y-7">
+                <div>
+                  <input
+                    type="text"
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="Назва курсу"
+                    className="w-full bg-transparent border-b border-du-gray-500 pb-2 text-sm focus:outline-none focus:border-du-black placeholder:text-du-gray-500"
+                  />
                 </div>
-              ) : (
-                <div className="flex flex-wrap gap-2">
-                  {requiredRoles.map((r, i) => (
-                    <span key={i} className="bg-du-yellow-soft text-du-gray-700 text-sm px-3 py-1 rounded-full font-medium">
-                      {r}
+
+                <div>
+                  <input
+                    type="text"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Короткий опис курсу"
+                    className="w-full bg-transparent border-b border-du-gray-500 pb-2 text-sm focus:outline-none focus:border-du-black placeholder:text-du-gray-500"
+                  />
+                </div>
+
+                <div className="relative" ref={specialtyPickerRef}>
+                  <button
+                    type="button"
+                    onClick={() => setShowSpecialtyPicker((v) => !v)}
+                    className="w-full flex items-center gap-2 border-b border-du-gray-500 pb-2 text-sm text-left"
+                  >
+                    <SearchIcon className="w-4 h-4 text-du-gray-500" />
+                    <span
+                      className={
+                        specialty ? "text-du-black" : "text-du-gray-500"
+                      }
+                    >
+                      {specialty || "Спеціальність курсу"}
                     </span>
-                  ))}
-                </div>
-              )}
-            </div>
+                    <span className="ml-auto text-du-gray-500">
+                      {showSpecialtyPicker ? (
+                        <ChevronUpIcon className="w-4 h-4" />
+                      ) : (
+                        <ChevronDownIcon className="w-4 h-4" />
+                      )}
+                    </span>
+                  </button>
 
-            {isEditing && (
-              <button
-                onClick={handleSave}
-                disabled={!title || !specialty}
-                className="w-full btn-pill btn-pill-black py-3 disabled:opacity-40 disabled:cursor-not-allowed"
-              >
-                {isNew ? '🚀 Створити і запустити пошук' : '💾 Зберегти зміни'}
-              </button>
+                  {showSpecialtyPicker && (
+                    <div className="absolute z-20 mt-2 w-full max-h-64 overflow-y-auto bg-du-white border border-du-gray-200">
+                      {specialties.map((s) => {
+                        const value = `${s.code} ${s.name}`;
+                        return (
+                          <label
+                            key={s.code}
+                            className="flex items-center gap-3 text-sm p-3 hover:bg-du-gray-50 cursor-pointer border-b border-du-gray-100 last:border-b-0"
+                          >
+                            <input
+                              type="radio"
+                              name="course-specialty-edit"
+                              className="radio-round"
+                              checked={specialty === value}
+                              onChange={() => {
+                                setSpecialty(value);
+                                setShowSpecialtyPicker(false);
+                              }}
+                            />
+                            {value}
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                <div>
+                  <p className="text-sm text-du-gray-500 mb-3">
+                    Яких фахівців шукаєте
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {roles.map((r) => {
+                      const selected = requiredRoles.includes(r);
+                      return (
+                        <button
+                          type="button"
+                          key={r}
+                          onClick={() => handleRoleToggle(r)}
+                          className={`text-sm px-4 py-2 rounded-full font-medium transition ${
+                            selected
+                              ? "bg-du-yellow-deep text-du-gray-700"
+                              : "bg-du-gray-100 text-du-gray-500 hover:bg-du-gray-200"
+                          }`}
+                        >
+                          {r}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={handleSave}
+                    disabled={isSaving || !title || !specialty}
+                    className="btn-pill btn-pill-black py-3 px-8 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    {isSaving ? "Зберігаємо..." : "Зберегти зміни"}
+                  </button>
+                  <button
+                    onClick={() => setIsEditing(false)}
+                    className="btn-pill btn-pill-outline py-3 px-8"
+                  >
+                    Скасувати
+                  </button>
+                </div>
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            {isAuthor && (
+              <div className="flex justify-end gap-2 mb-4">
+                {course.status === "Відкрито" && (
+                  <button
+                    onClick={handleCloseEnrollment}
+                    className="btn-pill btn-pill-outline text-sm py-2 px-4"
+                  >
+                    Завершити набір
+                  </button>
+                )}
+                <button
+                  onClick={handleStartEditing}
+                  className="btn-pill btn-pill-outline text-sm py-2 px-4"
+                >
+                  Редагувати
+                </button>
+              </div>
             )}
 
-            {/* Специфічний функціонал залежно від ролі користувача (Автор / Гість) */}
-            {!isEditing && (
-              <div className="border-t border-du-gray-200 pt-6 mt-6">
+            {error && (
+              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl p-2.5 mb-5">
+                {error}
+              </p>
+            )}
+
+            <div className="grid md:grid-cols-[1fr_320px] gap-8 items-start">
+              <div>
+                <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-3">
+                  {course.title}
+                </h1>
+                <span className="inline-block bg-du-black text-du-white text-xs px-3 py-1 rounded-full font-semibold mb-6">
+                  {course.specialty}
+                </span>
+
+                <h2 className="text-xl font-bold border-b border-du-gray-200 pb-2 mb-4">
+                  Опис курсу
+                </h2>
+                <p className="text-du-gray-700 whitespace-pre-line leading-relaxed">
+                  {course.description}
+                </p>
+              </div>
+
+              <div className="bg-du-gray-100 rounded-[20px] p-6 md:sticky md:top-6">
                 {isAuthor ? (
-                  <div>
-                    <h3 className="text-lg font-bold mb-3">Заявки на долучення до курсу</h3>
+                  <>
+                    <h3 className="font-bold text-lg mb-4">
+                      Заявки від співрозробників
+                    </h3>
                     {applications.length === 0 ? (
-                      <p className="text-sm text-du-gray-500 italic">Поки що немає жодної заявки від співавторів.</p>
+                      <p className="text-sm text-du-gray-500 italic">
+                        Поки що немає жодної заявки.
+                      </p>
                     ) : (
                       <div className="space-y-3">
-                        {applications.map(app => (
-                          <div key={app.id} className="flex justify-between items-center p-3 bg-du-gray-50 border border-du-gray-200 rounded-xl">
-                            <div>
-                              <div className="font-semibold">{app.userName}</div>
-                              <div className="text-xs text-du-blue font-medium">Роль: {app.role}</div>
+                        {applications.map((app) => (
+                          <div
+                            key={app._id}
+                            className="bg-du-white rounded-2xl p-4"
+                          >
+                            <button
+                              onClick={() =>
+                                setViewedApplicantId(app.applicantId)
+                              }
+                              className="font-semibold text-sm mb-1 hover:underline text-left"
+                            >
+                              {applicantNames[app.applicantId] || "..."}
+                            </button>
+                            <div className="text-xs text-du-gray-500 mb-3">
+                              {app.type === "співавтор"
+                                ? `Роль: ${app.role}`
+                                : "Записався як слухач"}
                             </div>
-                            <div className="flex gap-2">
-                              <button className="px-3 py-1 bg-du-olive text-du-white text-xs rounded-full hover:opacity-90">
-                                Підтвердити
-                              </button>
-                              <button className="px-3 py-1 bg-du-gray-200 text-du-gray-700 text-xs rounded-full hover:bg-du-gray-300">
-                                Відхилити
-                              </button>
-                            </div>
+                            {app.status === "очікує" ? (
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() =>
+                                    handleApplicationStatus(
+                                      app._id,
+                                      "відхилено",
+                                    )
+                                  }
+                                  className="btn-pill btn-pill-outline text-xs py-1.5 px-3"
+                                >
+                                  Відхилити
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    handleApplicationStatus(
+                                      app._id,
+                                      "підтверджено",
+                                    )
+                                  }
+                                  className="btn-pill btn-pill-black text-xs py-1.5 px-3"
+                                >
+                                  Прийняти
+                                </button>
+                              </div>
+                            ) : (
+                              <span
+                                className={`text-xs font-semibold px-3 py-1 rounded-full ${
+                                  app.status === "підтверджено"
+                                    ? "bg-emerald-600 text-du-white"
+                                    : "bg-red-600 text-du-white"
+                                }`}
+                              >
+                                {app.status === "підтверджено"
+                                  ? "Прийнято"
+                                  : "Відхилено"}
+                              </span>
+                            )}
                           </div>
                         ))}
                       </div>
                     )}
-                  </div>
-                ) : (
-                  <div className="bg-du-yellow-soft p-5 rounded-2xl">
-                    <h3 className="font-bold mb-2">Бажаєте стати співавтором?</h3>
-                    <p className="text-sm text-du-gray-700 mb-4">
-                      Оберіть одну з доступних ролей, які шукає автор, та надішліть свій запит.
-                    </p>
-                    <div className="flex flex-wrap gap-3 items-center">
-                      <select className="p-2 border border-du-gray-200 rounded-xl text-sm bg-du-white">
-                        <option value="">Оберіть роль...</option>
-                        {requiredRoles.map((r, i) => <option key={i} value={r}>{r}</option>)}
-                      </select>
-                      <button
-                        onClick={() => alert('Заявку успішно надіслано автору!')}
-                        className="btn-pill btn-pill-black text-sm py-2 px-5"
+                  </>
+                ) : !user ? (
+                  <>
+                    <h3 className="font-bold text-lg mb-2">
+                      Бажаєте стати співавтором?
+                    </h3>
+                    <p className="text-sm text-du-gray-500 mb-4">
+                      Щоб подати заявку на курс,{" "}
+                      <Link
+                        href="/login"
+                        className="text-du-blue font-medium hover:underline"
                       >
-                        Подати себе як співавтора
-                      </button>
+                        увійдіть
+                      </Link>
+                      .
+                    </p>
+                  </>
+                ) : course.status === "Закрито" ? (
+                  <>
+                    <h3 className="font-bold text-lg mb-2">Набір завершено</h3>
+                    <p className="text-sm text-du-gray-500">
+                      Автор курсу вже закрив набір співрозробників.
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <h3 className="font-bold text-lg mb-1">
+                      Бажаєте стати співавтором?
+                    </h3>
+                    <p className="text-sm text-du-gray-500 mb-4">
+                      Оберіть роль, у якій можете допомогти. Автор курсу отримає
+                      вашу заявку.
+                    </p>
+
+                    {(() => {
+                      const appliedRoles = myApplications.filter(
+                        (a) => a.type === "співавтор",
+                      );
+                      const appliedRoleNames = appliedRoles.map((a) => a.role);
+                      const availableRoles = requiredRoles.filter(
+                        (r) => !appliedRoleNames.includes(r),
+                      );
+
+                      return (
+                        <>
+                          {appliedRoles.length > 0 && (
+                            <div className="space-y-2 mb-4">
+                              {appliedRoles.map((a) => (
+                                <div
+                                  key={a._id}
+                                  className="flex items-center justify-between gap-2 bg-du-white rounded-full pl-4 pr-1.5 py-1.5"
+                                >
+                                  <span className="text-sm">{a.role}</span>
+                                  {a.status === "очікує" ? (
+                                    <span className="bg-du-yellow-deep text-du-gray-700 text-xs px-3 py-1 rounded-full font-semibold">
+                                      Очікує
+                                    </span>
+                                  ) : a.status === "підтверджено" ? (
+                                    <span className="bg-emerald-600 text-du-white text-xs px-3 py-1 rounded-full font-semibold">
+                                      Прийнято
+                                    </span>
+                                  ) : (
+                                    <span className="bg-red-600 text-du-white text-xs px-3 py-1 rounded-full font-semibold">
+                                      Відхилено
+                                    </span>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+
+                          {availableRoles.length > 0 && (
+                            <>
+                              <div className="flex flex-col gap-2 mb-4">
+                                {availableRoles.map((r, i) => (
+                                  <label
+                                    key={i}
+                                    className="flex items-center gap-2.5 text-sm px-4 py-2 rounded-full border border-du-gray-200 bg-du-white hover:border-du-black cursor-pointer"
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      className="checkbox-round"
+                                      checked={selectedApplyRoles.includes(r)}
+                                      onChange={() => toggleApplyRole(r)}
+                                    />
+                                    {r}
+                                  </label>
+                                ))}
+                              </div>
+                              <button
+                                onClick={handleApplyAsCoauthor}
+                                disabled={
+                                  isApplying || selectedApplyRoles.length === 0
+                                }
+                                className="w-full btn-pill btn-pill-black text-sm py-2.5 disabled:opacity-40 disabled:cursor-not-allowed"
+                              >
+                                Подати заявку
+                              </button>
+                            </>
+                          )}
+                        </>
+                      );
+                    })()}
+
+                    <div className="border-t border-du-gray-200 mt-5 pt-4">
+                      {hasAppliedAsListener ? (
+                        <p className="text-sm text-du-gray-700">
+                          Ви вже записані на цей курс як слухач.
+                        </p>
+                      ) : (
+                        <button
+                          onClick={handleApplyAsListener}
+                          disabled={isApplying}
+                          className="w-full btn-pill btn-pill-outline text-sm py-2.5 disabled:opacity-40"
+                        >
+                          Записатися як слухач
+                        </button>
+                      )}
                     </div>
-                  </div>
+                  </>
                 )}
               </div>
-            )}
-          </div>
-        </div>
+            </div>
+          </>
+        )}
       </div>
+
+      {viewedApplicantId && (
+        <ApplicantProfileModal
+          userId={viewedApplicantId}
+          onClose={() => setViewedApplicantId(null)}
+        />
+      )}
     </div>
   );
 }

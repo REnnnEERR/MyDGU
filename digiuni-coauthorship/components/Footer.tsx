@@ -22,7 +22,10 @@ function FooterColumn({ links }: { links: { label: string; href: string }[] }) {
     <ul className="space-y-3">
       {links.map((link) => (
         <li key={link.label}>
-          <a href={link.href} className="text-sm font-medium text-du-white/90 hover:text-du-white">
+          <a
+            href={link.href}
+            className="text-sm font-medium text-du-white/90 hover:text-du-white"
+          >
             {link.label}
           </a>
         </li>
@@ -34,7 +37,7 @@ function FooterColumn({ links }: { links: { label: string; href: string }[] }) {
 export function Footer() {
   return (
     <footer className="bg-du-black text-du-white mt-auto">
-      <div className="max-w-7xl mx-auto px-6 py-12">
+      <div className="max-w-[1440px] mx-auto px-20 py-12">
         <div className="grid grid-cols-2 md:grid-cols-3 gap-8 mb-10">
           <FooterColumn links={COLUMN_1} />
           <FooterColumn links={COLUMN_2} />
@@ -46,9 +49,10 @@ export function Footer() {
           <div className="text-xs text-du-white/60 leading-relaxed max-w-2xl">
             <p>За фінансової підтримки Європейського Союзу.</p>
             <p>
-              Висловлені погляди та думки є лише думками авторів і не обов&#x2019;язково
-              відображають думки Європейського Союзу. Європейський Союз та орган, що
-              надав грант, не несуть відповідальності за них.
+              Висловлені погляди та думки є лише думками авторів і не
+              обов&#x2019;язково відображають думки Європейського Союзу.
+              Європейський Союз та орган, що надав грант, не несуть
+              відповідальності за них.
             </p>
             <p className="mt-2">©2025 DigiUni. Всі права захищені.</p>
           </div>

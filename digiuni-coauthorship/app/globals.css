@@ -32,6 +32,9 @@
   --du-gray-500: #6b6b65;
   --du-gray-700: #3a3a36;
 
+  --du-banner-bg: #e7ecf5;
+  --du-banner-text: #4a5568;
+
   --du-radius-pill: 999px;
   --du-radius-card: 24px;
 }
@@ -57,6 +60,9 @@
   --color-du-gray-200: var(--du-gray-200);
   --color-du-gray-500: var(--du-gray-500);
   --color-du-gray-700: var(--du-gray-700);
+
+  --color-du-banner-bg: var(--du-banner-bg);
+  --color-du-banner-text: var(--du-banner-text);
 }
 
 * {
@@ -79,7 +85,10 @@ body {
   padding: 0.75rem 1.5rem;
   font-weight: 600;
   white-space: nowrap;
-  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
 }
 
 .btn-pill-black {
@@ -109,4 +118,130 @@ body {
 
 .btn-pill-blue:hover {
   background: var(--du-blue-dark);
+}
+
+.pill-gradient-border {
+  padding: 2px;
+  border-radius: 9999px;
+  background: radial-gradient(
+    96.04% 161.51% at 3.33% -13.12%,
+    #a6c7bb 0%,
+    #c1beb3 8.33%,
+    #e4b4a9 23.96%,
+    #e7b2a9 40.9%,
+    #e9b2bc 58.38%,
+    #9086b7 71.65%,
+    #7271bd 82.77%,
+    #4a54c6 90.28%,
+    #2833d0 100%
+  );
+}
+
+.btn-pill-black.btn-outline-on-hover:hover {
+  background: transparent !important;
+  color: var(--du-black) !important;
+  border: 1.5px solid var(--du-black);
+}
+
+@font-face {
+  font-family: "Diya Head";
+  src: url("/fonts/e-ukraine-head/e-UkraineHead-Thin.otf") format("opentype");
+  font-weight: 100;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Diya Head";
+  src: url("/fonts/e-ukraine-head/e-UkraineHead-UltraLight.otf")
+    format("opentype");
+  font-weight: 200;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Diya Head";
+  src: url("/fonts/e-ukraine-head/e-UkraineHead-Light.otf") format("opentype");
+  font-weight: 300;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Diya Head";
+  src: url("/fonts/e-ukraine-head/e-UkraineHead-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Diya Head";
+  src: url("/fonts/e-ukraine-head/e-UkraineHead-Medium.otf") format("opentype");
+  font-weight: 500 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Diya Head";
+  src: url("/fonts/e-ukraine-head/e-UkraineHead-Bold.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Diya Logo";
+  src: url("/fonts/e-ukraine-head/e-UkraineHead-LOGO.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+input[type="checkbox"].checkbox-round {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  border: 1.5px solid var(--du-gray-500);
+  border-radius: 9999px;
+  cursor: pointer;
+  position: relative;
+  margin: 0;
+}
+input[type="checkbox"].checkbox-round:checked {
+  background: var(--du-black);
+  border-color: var(--du-black);
+}
+input[type="checkbox"].checkbox-round:checked::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 1px;
+  width: 4px;
+  height: 8px;
+  border: solid white;
+  border-width: 0 2px 2px 0;
+  transform: rotate(45deg);
+}
+/* radio */
+
+input[type="radio"].radio-round {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  min-width: 16px;
+  border: 1.5px solid var(--du-gray-500);
+  border-radius: 9999px;
+  cursor: pointer;
+  position: relative;
+  margin: 0;
+}
+input[type="radio"].radio-round:checked {
+  border-color: var(--du-black);
+}
+input[type="radio"].radio-round:checked::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: var(--du-black);
 }
