@@ -27,7 +27,7 @@
   /* кнопка "Вже незабаром" на лаймовій картці */
 
   --du-gray-50: #f8f8f6;
-  --du-gray-100: #f1f1ee;
+  --du-gray-100: rgb(234, 234, 234);
   --du-gray-200: #e3e3de;
   --du-gray-500: #6b6b65;
   --du-gray-700: #3a3a36;
@@ -137,10 +137,17 @@ body {
   );
 }
 
+.btn-outline-on-hover {
+  box-shadow: inset 0 0 0 1.5px transparent;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    box-shadow 0.15s ease;
+}
 .btn-pill-black.btn-outline-on-hover:hover {
   background: transparent !important;
   color: var(--du-black) !important;
-  border: 1.5px solid var(--du-black);
+  box-shadow: inset 0 0 0 1.5px var(--du-black);
 }
 
 @font-face {

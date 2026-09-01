@@ -11,11 +11,12 @@ export function SharedDevelopmentHeader({
   active,
   subtitle = DEFAULT_SUBTITLE,
 }: {
-  active: "catalog" | "my-courses" | "none";
+  active: "catalog" | "my-courses" | "messages" | "none";
   subtitle?: string;
 }) {
   const { user } = useAuth();
   const [myCoursesCount, setMyCoursesCount] = useState<number | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     if (!user) {
@@ -36,6 +37,19 @@ export function SharedDevelopmentHeader({
         setMyCoursesCount(null);
       }
     })();
+  }, [user]);
+
+  useEffect(() => {
+    if (!user) {
+      setUnreadCount(0);
+      return;
+    }
+    api
+      .get<{ unreadCount: number }[]>("/api/messages/conversations")
+      .then((list) =>
+        setUnreadCount(list.reduce((sum, c) => sum + c.unreadCount, 0)),
+      )
+      .catch(() => setUnreadCount(0));
   }, [user]);
 
   return (
@@ -94,6 +108,24 @@ export function SharedDevelopmentHeader({
                   {myCoursesCount !== null && (
                     <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1 rounded-full bg-du-black text-du-white text-xs">
                       {myCoursesCount}
+                    </span>
+                  )}
+                </Link>
+              )}
+              {user && (
+                <Link
+                  href="/messages"
+                  className={
+                    (active === "messages"
+                      ? "text-du-black border-b-2 border-du-black"
+                      : "text-du-gray-500 hover:text-du-black") +
+                    " pb-1 flex items-center gap-1.5"
+                  }
+                >
+                  Повідомлення
+                  {unreadCount > 0 && (
+                    <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1 rounded-full bg-du-black text-du-white text-xs">
+                      {unreadCount}
                     </span>
                   )}
                 </Link>

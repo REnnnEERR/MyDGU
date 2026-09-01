@@ -8,6 +8,7 @@ import { SharedDevelopmentHeader } from "@/components/SharedDevelopmentHeader";
 import { api, ApiError } from "@/context/AuthContext";
 import type { Course } from "@/types/course";
 import { SearchIcon, ChevronDownIcon, ChevronUpIcon } from "@/components/icons";
+import { AutoResizeTextarea } from "@/components/AutoResizeTextarea";
 
 export default function NewCoursePage() {
   const router = useRouter();
@@ -96,12 +97,11 @@ export default function NewCoursePage() {
             </div>
 
             <div>
-              <input
-                type="text"
+              <AutoResizeTextarea
                 value={description}
-                onChange={(e) => setDescription(e.target.value)}
+                onChange={setDescription}
                 placeholder="Короткий опис курсу"
-                className="w-full bg-transparent border-b border-du-gray-500 pb-2 text-sm focus:outline-none focus:border-du-black placeholder:text-du-gray-500"
+                className="w-full"
               />
             </div>
 
@@ -165,11 +165,15 @@ export default function NewCoursePage() {
                       type="button"
                       key={r}
                       onClick={() => handleRoleToggle(r)}
-                      className={`text-sm px-4 py-2 rounded-full font-medium transition ${
+                      className="text-sm px-4 py-2 rounded-full font-medium transition"
+                      style={
                         selected
-                          ? "bg-du-yellow-deep text-du-gray-700"
-                          : "bg-du-gray-100 text-du-gray-500 hover:bg-du-gray-200"
-                      }`}
+                          ? { background: "rgba(91,90,255,1)", color: "#fff" }
+                          : {
+                              background: "rgba(255,219,77,1)",
+                              color: "#1a1a1a",
+                            }
+                      }
                     >
                       {r}
                     </button>

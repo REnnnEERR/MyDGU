@@ -1,9 +1,12 @@
 "use client";
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { LogoMark } from "./Logo";
-import { useAuth } from "@/context/AuthContext";
+import { api, useAuth } from "@/context/AuthContext";
 import { GlobeIcon } from "@/components/icons";
+import type { Profile } from "@/types/course";
+
+type Conversation = { unreadCount: number };
 
 const NAV_LINKS = [
   { label: "Курси", href: "#" },
@@ -16,6 +19,8 @@ export function Header() {
   const { user, isLoading, logout } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const [displayName, setDisplayName] = useState("");
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
@@ -26,6 +31,42 @@ export function Header() {
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  const loadDisplayName = useCallback(() => {
+    if (!user) {
+      setDisplayName("");
+      return;
+    }
+    setDisplayName(user.email ? user.email.split("@")[0] : "");
+    api
+      .get<Profile | null>("/api/profile/me")
+      .then((profile) => {
+        if (profile?.fullName) setDisplayName(profile.fullName);
+      })
+      .catch(() => {});
+  }, [user]);
+
+  useEffect(() => {
+    loadDisplayName();
+  }, [loadDisplayName]);
+
+  useEffect(() => {
+    window.addEventListener("profile-updated", loadDisplayName);
+    return () => window.removeEventListener("profile-updated", loadDisplayName);
+  }, [loadDisplayName]);
+
+  useEffect(() => {
+    if (!user) {
+      setUnreadCount(0);
+      return;
+    }
+    api
+      .get<Conversation[]>("/api/messages/conversations")
+      .then((list) =>
+        setUnreadCount(list.reduce((sum, c) => sum + c.unreadCount, 0)),
+      )
+      .catch(() => {});
+  }, [user, menuOpen]);
 
   return (
     <header>
@@ -60,9 +101,12 @@ export function Header() {
             <div className="relative" ref={menuRef}>
               <button
                 onClick={() => setMenuOpen((v) => !v)}
-                className="btn-pill btn-pill-outline text-sm py-2 px-5"
+                className="relative btn-pill btn-pill-outline text-sm py-2 px-5"
               >
-                {user.email ? user.email.split("@")[0] : "Профіль"}
+                {displayName || "Профіль"}
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-red-600 border-2 border-du-white" />
+                )}
               </button>
 
               {menuOpen && (

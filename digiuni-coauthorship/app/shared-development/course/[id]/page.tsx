@@ -10,6 +10,8 @@ import { SearchIcon, ChevronDownIcon, ChevronUpIcon } from "@/components/icons";
 import { api, useAuth, ApiError } from "@/context/AuthContext";
 import { ApplicantProfileModal } from "@/components/ApplicantProfileModal";
 import type { Course, CourseApplication, Profile } from "@/types/course";
+import { AutoResizeTextarea } from "@/components/AutoResizeTextarea";
+import { MessageModal } from "@/components/MessageModal";
 
 export default function CourseViewPage({
   params,
@@ -45,6 +47,8 @@ export default function CourseViewPage({
   const [viewedApplicantId, setViewedApplicantId] = useState<string | null>(
     null,
   );
+  const [showMessageModal, setShowMessageModal] = useState(false);
+  const [messageTarget, setMessageTarget] = useState<string | null>(null);
 
   const isAuthor = !!(user && course && course.authorId === user.id);
 
@@ -166,6 +170,14 @@ export default function CourseViewPage({
     setCourse(updated);
   }
 
+  async function handleReopenEnrollment() {
+    if (!course) return;
+    const updated = await api.put<Course>(`/api/courses/${course._id}`, {
+      status: "Відкрито",
+    });
+    setCourse(updated);
+  }
+
   async function handleApplicationStatus(
     applicationId: string,
     status: "підтверджено" | "відхилено",
@@ -212,28 +224,6 @@ export default function CourseViewPage({
     }
   }
 
-  async function handleApplyAsListener() {
-    if (!course) return;
-    setError(null);
-    setIsApplying(true);
-    try {
-      const application = await api.post<CourseApplication>(
-        "/api/applications",
-        {
-          courseId: course._id,
-          type: "слухач",
-        },
-      );
-      setMyApplications((prev) => [...prev, application]);
-    } catch (err) {
-      setError(
-        err instanceof ApiError ? err.message : "Не вдалося подати заявку",
-      );
-    } finally {
-      setIsApplying(false);
-    }
-  }
-
   if (isLoading) {
     return (
       <div className="flex flex-col flex-1">
@@ -264,10 +254,9 @@ export default function CourseViewPage({
     );
   }
 
-  const hasAppliedAsCoauthor = myApplications.some(
-    (a) => a.type === "співавтор",
-  );
-  const hasAppliedAsListener = myApplications.some((a) => a.type === "слухач");
+  const appliedRoleNames = myApplications
+    .filter((a) => a.type === "співавтор")
+    .map((a) => a.role);
 
   return (
     <div className="flex flex-col flex-1">
@@ -309,12 +298,11 @@ export default function CourseViewPage({
                 </div>
 
                 <div>
-                  <input
-                    type="text"
+                  <AutoResizeTextarea
                     value={description}
-                    onChange={(e) => setDescription(e.target.value)}
+                    onChange={setDescription}
                     placeholder="Короткий опис курсу"
-                    className="w-full bg-transparent border-b border-du-gray-500 pb-2 text-sm focus:outline-none focus:border-du-black placeholder:text-du-gray-500"
+                    className="w-full"
                   />
                 </div>
 
@@ -380,11 +368,18 @@ export default function CourseViewPage({
                           type="button"
                           key={r}
                           onClick={() => handleRoleToggle(r)}
-                          className={`text-sm px-4 py-2 rounded-full font-medium transition ${
+                          className="text-sm px-4 py-2 rounded-full font-medium transition"
+                          style={
                             selected
-                              ? "bg-du-yellow-deep text-du-gray-700"
-                              : "bg-du-gray-100 text-du-gray-500 hover:bg-du-gray-200"
-                          }`}
+                              ? {
+                                  background: "rgba(91,90,255,1)",
+                                  color: "#fff",
+                                }
+                              : {
+                                  background: "rgba(255,219,77,1)",
+                                  color: "#1a1a1a",
+                                }
+                          }
                         >
                           {r}
                         </button>
@@ -415,12 +410,19 @@ export default function CourseViewPage({
           <>
             {isAuthor && (
               <div className="flex justify-end gap-2 mb-4">
-                {course.status === "Відкрито" && (
+                {course.status === "Відкрито" ? (
                   <button
                     onClick={handleCloseEnrollment}
                     className="btn-pill btn-pill-outline text-sm py-2 px-4"
                   >
                     Завершити набір
+                  </button>
+                ) : (
+                  <button
+                    onClick={handleReopenEnrollment}
+                    className="btn-pill btn-pill-black text-sm py-2 px-4"
+                  >
+                    Відкрити набір
                   </button>
                 )}
                 <button
@@ -438,7 +440,7 @@ export default function CourseViewPage({
               </p>
             )}
 
-            <div className="grid md:grid-cols-[1fr_320px] gap-8 items-start">
+            <div className="grid md:grid-cols-[1fr_400px] gap-8 items-start">
               <div>
                 <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-3">
                   {course.title}
@@ -455,12 +457,29 @@ export default function CourseViewPage({
                 </p>
               </div>
 
-              <div className="bg-du-gray-100 rounded-[20px] p-6 md:sticky md:top-6">
+              <div
+                className={
+                  isAuthor
+                    ? "bg-du-white p-6 md:sticky md:top-6"
+                    : "bg-du-white md:sticky md:top-6"
+                }
+                style={
+                  !isAuthor ? { border: "2px solid rgba(0,0,0,1)" } : undefined
+                }
+              >
                 {isAuthor ? (
                   <>
-                    <h3 className="font-bold text-lg mb-4">
-                      Заявки від співрозробників
-                    </h3>
+                    <div className="flex items-center justify-between gap-3 mb-4">
+                      <h3 className="font-bold text-lg">
+                        Заявки від співрозробників
+                      </h3>
+                      <Link
+                        href="/messages"
+                        className="text-sm text-du-blue font-medium hover:underline shrink-0"
+                      >
+                        Повідомлення
+                      </Link>
+                    </div>
                     {applications.length === 0 ? (
                       <p className="text-sm text-du-gray-500 italic">
                         Поки що немає жодної заявки.
@@ -470,16 +489,28 @@ export default function CourseViewPage({
                         {applications.map((app) => (
                           <div
                             key={app._id}
-                            className="bg-du-white rounded-2xl p-4"
+                            className="p-4"
+                            style={{ background: "rgba(231,238,243,1)" }}
                           >
-                            <button
-                              onClick={() =>
-                                setViewedApplicantId(app.applicantId)
-                              }
-                              className="font-semibold text-sm mb-1 hover:underline text-left"
-                            >
-                              {applicantNames[app.applicantId] || "..."}
-                            </button>
+                            <div className="flex items-center justify-between gap-3 mb-1">
+                              <button
+                                onClick={() =>
+                                  setViewedApplicantId(app.applicantId)
+                                }
+                                className="font-semibold text-sm hover:underline text-left"
+                              >
+                                {applicantNames[app.applicantId] || "..."}
+                              </button>
+                              <button
+                                onClick={() => {
+                                  setMessageTarget(app.applicantId);
+                                  setShowMessageModal(true);
+                                }}
+                                className="text-xs text-du-blue font-medium hover:underline shrink-0"
+                              >
+                                Написати
+                              </button>
+                            </div>
                             <div className="text-xs text-du-gray-500 mb-3">
                               {app.type === "співавтор"
                                 ? `Роль: ${app.role}`
@@ -529,11 +560,19 @@ export default function CourseViewPage({
                     )}
                   </>
                 ) : !user ? (
-                  <>
-                    <h3 className="font-bold text-lg mb-2">
+                  <div className="p-6">
+                    <h3
+                      style={{
+                        fontFamily: '"Diya", var(--font-manrope), sans-serif',
+                        fontWeight: 600,
+                        fontSize: "38px",
+                        lineHeight: "40px",
+                      }}
+                      className="mb-2"
+                    >
                       Бажаєте стати співавтором?
                     </h3>
-                    <p className="text-sm text-du-gray-500 mb-4">
+                    <p className="text-sm text-du-gray-500">
                       Щоб подати заявку на курс,{" "}
                       <Link
                         href="/login"
@@ -543,107 +582,149 @@ export default function CourseViewPage({
                       </Link>
                       .
                     </p>
-                  </>
+                  </div>
                 ) : course.status === "Закрито" ? (
-                  <>
-                    <h3 className="font-bold text-lg mb-2">Набір завершено</h3>
+                  <div className="p-6">
+                    <h3
+                      style={{
+                        fontFamily: '"Diya", var(--font-manrope), sans-serif',
+                        fontWeight: 600,
+                        fontSize: "38px",
+                        lineHeight: "40px",
+                      }}
+                      className="mb-2"
+                    >
+                      Набір завершено
+                    </h3>
                     <p className="text-sm text-du-gray-500">
                       Автор курсу вже закрив набір співрозробників.
                     </p>
-                  </>
+                  </div>
                 ) : (
                   <>
-                    <h3 className="font-bold text-lg mb-1">
-                      Бажаєте стати співавтором?
-                    </h3>
-                    <p className="text-sm text-du-gray-500 mb-4">
-                      Оберіть роль, у якій можете допомогти. Автор курсу отримає
-                      вашу заявку.
-                    </p>
-
-                    {(() => {
-                      const appliedRoles = myApplications.filter(
-                        (a) => a.type === "співавтор",
-                      );
-                      const appliedRoleNames = appliedRoles.map((a) => a.role);
-                      const availableRoles = requiredRoles.filter(
-                        (r) => !appliedRoleNames.includes(r),
-                      );
-
-                      return (
-                        <>
-                          {appliedRoles.length > 0 && (
-                            <div className="space-y-2 mb-4">
-                              {appliedRoles.map((a) => (
-                                <div
-                                  key={a._id}
-                                  className="flex items-center justify-between gap-2 bg-du-white rounded-full pl-4 pr-1.5 py-1.5"
-                                >
-                                  <span className="text-sm">{a.role}</span>
-                                  {a.status === "очікує" ? (
-                                    <span className="bg-du-yellow-deep text-du-gray-700 text-xs px-3 py-1 rounded-full font-semibold">
-                                      Очікує
-                                    </span>
-                                  ) : a.status === "підтверджено" ? (
-                                    <span className="bg-emerald-600 text-du-white text-xs px-3 py-1 rounded-full font-semibold">
-                                      Прийнято
-                                    </span>
-                                  ) : (
-                                    <span className="bg-red-600 text-du-white text-xs px-3 py-1 rounded-full font-semibold">
-                                      Відхилено
-                                    </span>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-                          )}
-
-                          {availableRoles.length > 0 && (
-                            <>
-                              <div className="flex flex-col gap-2 mb-4">
-                                {availableRoles.map((r, i) => (
-                                  <label
-                                    key={i}
-                                    className="flex items-center gap-2.5 text-sm px-4 py-2 rounded-full border border-du-gray-200 bg-du-white hover:border-du-black cursor-pointer"
-                                  >
-                                    <input
-                                      type="checkbox"
-                                      className="checkbox-round"
-                                      checked={selectedApplyRoles.includes(r)}
-                                      onChange={() => toggleApplyRole(r)}
-                                    />
-                                    {r}
-                                  </label>
-                                ))}
-                              </div>
-                              <button
-                                onClick={handleApplyAsCoauthor}
-                                disabled={
-                                  isApplying || selectedApplyRoles.length === 0
-                                }
-                                className="w-full btn-pill btn-pill-black text-sm py-2.5 disabled:opacity-40 disabled:cursor-not-allowed"
-                              >
-                                Подати заявку
-                              </button>
-                            </>
-                          )}
-                        </>
-                      );
-                    })()}
-
-                    <div className="border-t border-du-gray-200 mt-5 pt-4">
-                      {hasAppliedAsListener ? (
-                        <p className="text-sm text-du-gray-700">
-                          Ви вже записані на цей курс як слухач.
-                        </p>
-                      ) : (
-                        <button
-                          onClick={handleApplyAsListener}
-                          disabled={isApplying}
-                          className="w-full btn-pill btn-pill-outline text-sm py-2.5 disabled:opacity-40"
+                    <div className="p-6">
+                      <div
+                        className="w-[352px]"
+                        style={{
+                          borderBottom: "2px solid rgba(0,0,0,1)",
+                          paddingBottom: "16px",
+                        }}
+                      >
+                        <h3
+                          style={{
+                            fontFamily:
+                              '"Diya", var(--font-manrope), sans-serif',
+                            fontWeight: 600,
+                            fontSize: "38px",
+                            lineHeight: "40px",
+                            letterSpacing: "0%",
+                          }}
                         >
-                          Записатися як слухач
+                          Бажаєте стати співавтором?
+                        </h3>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setMessageTarget(course.authorId);
+                          setShowMessageModal(true);
+                        }}
+                        className="text-sm text-du-blue font-medium hover:underline mt-3"
+                      >
+                        Написати автору курсу
+                      </button>
+                    </div>
+
+                    <div className="p-6">
+                      <div
+                        className="w-[352px]"
+                        style={{
+                          borderBottom: "2px solid rgba(0,0,0,1)",
+                          paddingBottom: "16px",
+                        }}
+                      >
+                        <p
+                          className="mb-4"
+                          style={{
+                            fontFamily:
+                              '"Diya", var(--font-manrope), sans-serif',
+                            fontWeight: 600,
+                            fontSize: "12px",
+                            lineHeight: "16px",
+                            letterSpacing: "-0.24px",
+                            verticalAlign: "middle",
+                            color: "rgba(100,116,139,1)",
+                          }}
+                        >
+                          Оберіть роль, у якій можете допомогти. Автор курсу
+                          отримає вашу заявку.
+                        </p>
+
+                        <div className="flex flex-col gap-2">
+                          {requiredRoles.map((r, i) => {
+                            const alreadyApplied = appliedRoleNames.includes(r);
+                            const selected = selectedApplyRoles.includes(r);
+                            return (
+                              <button
+                                key={i}
+                                type="button"
+                                disabled={alreadyApplied}
+                                onClick={() => toggleApplyRole(r)}
+                                className="text-left text-sm px-4 py-2.5 rounded-full transition"
+                                style={
+                                  alreadyApplied
+                                    ? {
+                                        background: "rgba(234,234,234,1)",
+                                        color: "rgba(140,140,140,1)",
+                                        cursor: "default",
+                                      }
+                                    : selected
+                                      ? {
+                                          background: "rgba(234,234,234,1)",
+                                          color: "#000",
+                                        }
+                                      : {
+                                          border: "2px solid rgba(0,0,0,1)",
+                                          color: "#000",
+                                        }
+                                }
+                              >
+                                {r}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-6">
+                      {appliedRoleNames.length < requiredRoles.length && (
+                        <button
+                          onClick={handleApplyAsCoauthor}
+                          disabled={
+                            isApplying || selectedApplyRoles.length === 0
+                          }
+                          className="w-full btn-pill btn-pill-black btn-outline-on-hover text-sm py-2.5 disabled:opacity-40 disabled:cursor-not-allowed"
+                        >
+                          Подати заявку
                         </button>
+                      )}
+
+                      {appliedRoleNames.length > 0 && (
+                        <div
+                          className={`text-center text-sm font-medium p-4 ${
+                            appliedRoleNames.length < requiredRoles.length
+                              ? "mt-4"
+                              : ""
+                          }`}
+                          style={{
+                            background: "rgba(255,247,219,1)",
+                            color: "#1a1a1a",
+                          }}
+                        >
+                          Заявку надіслано.
+                          <br />
+                          Автор курсу побачить вашу роль і профіль.
+                        </div>
                       )}
                     </div>
                   </>
@@ -658,6 +739,20 @@ export default function CourseViewPage({
         <ApplicantProfileModal
           userId={viewedApplicantId}
           onClose={() => setViewedApplicantId(null)}
+        />
+      )}
+
+      {showMessageModal && messageTarget && (
+        <MessageModal
+          courseId={course._id}
+          otherUserId={messageTarget}
+          otherUserLabel={
+            messageTarget === course.authorId
+              ? "Автор курсу"
+              : applicantNames[messageTarget] || "Кандидат"
+          }
+          courseTitle={course.title}
+          onClose={() => setShowMessageModal(false)}
         />
       )}
     </div>

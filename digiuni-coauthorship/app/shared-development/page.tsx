@@ -261,8 +261,10 @@ export default function SharedDevelopment() {
                   >
                     {course.title}
                   </h3>
-                  <p className="text-du-gray-700 text-sm line-clamp-3 mb-3">
-                    {course.description}
+                  <p className="text-du-gray-700 text-sm mb-3">
+                    {course.description.length > 200
+                      ? course.description.slice(0, 200) + "..."
+                      : course.description}
                   </p>
                   <div className="text-xs text-du-gray-500 mb-4">
                     {authorNames[course.authorId] || "..."}

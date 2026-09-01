@@ -1,11 +1,12 @@
 "use client";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { ModuleBreadcrumb } from "@/components/Header";
 import { SharedDevelopmentHeader } from "@/components/SharedDevelopmentHeader";
 import { api, useAuth } from "@/context/AuthContext";
 import { ApplicantProfileModal } from "@/components/ApplicantProfileModal";
 import { EditIcon } from "@/components/icons";
+import { getCached, setCached } from "@/lib/listCache";
 import type { Course, CourseApplication, Profile } from "@/types/course";
 
 type CoDeveloperItem = {
@@ -19,36 +20,60 @@ type AuthorItem = {
   applicantProfiles: Record<string, Profile | null>;
 };
 
+type CoDeveloperGroup = {
+  course: Course | null;
+  applications: CourseApplication[];
+};
+
 const STATUS_LABEL: Record<Course["status"], string> = {
   Відкрито: "Набір відкрито",
   Закрито: "Набір закрито",
 };
+
+const CO_DEV_CACHE_KEY = "my-courses:co-developer";
+const AUTHOR_CACHE_KEY = "my-courses:author";
+const PROFILE_CACHE_KEY = "my-courses:my-profile";
 
 export default function MyCourses() {
   const { user, isLoading: isAuthLoading } = useAuth();
   const [tab, setTab] = useState<"co-developer" | "author">("co-developer");
 
   const [coDeveloperItems, setCoDeveloperItems] = useState<CoDeveloperItem[]>(
-    [],
+    () => getCached<CoDeveloperItem[]>(CO_DEV_CACHE_KEY) || [],
   );
-  const [myProfile, setMyProfile] = useState<Profile | null>(null);
-  const [isCoDevLoading, setIsCoDevLoading] = useState(true);
+  const [myProfile, setMyProfile] = useState<Profile | null>(
+    () => getCached<Profile | null>(PROFILE_CACHE_KEY) ?? null,
+  );
+  const [isCoDevLoading, setIsCoDevLoading] = useState(
+    coDeveloperItems.length === 0,
+  );
+  const hasLoadedCoDevOnce = useRef(coDeveloperItems.length > 0);
 
-  const [authorItems, setAuthorItems] = useState<AuthorItem[]>([]);
-  const [isAuthorLoading, setIsAuthorLoading] = useState(true);
+  const [authorItems, setAuthorItems] = useState<AuthorItem[]>(
+    () => getCached<AuthorItem[]>(AUTHOR_CACHE_KEY) || [],
+  );
+  const [isAuthorLoading, setIsAuthorLoading] = useState(
+    authorItems.length === 0,
+  );
+  const hasLoadedAuthorOnce = useRef(authorItems.length > 0);
+
   const [expandedCourseId, setExpandedCourseId] = useState<string | null>(null);
+  const [expandedCoDevCourseId, setExpandedCoDevCourseId] = useState<
+    string | null
+  >(null);
   const [viewedApplicantId, setViewedApplicantId] = useState<string | null>(
     null,
   );
 
-  const loadCoDeveloper = useCallback(async () => {
-    setIsCoDevLoading(true);
+  const loadCoDeveloper = useCallback(async (silent = false) => {
+    if (!silent && !hasLoadedCoDevOnce.current) setIsCoDevLoading(true);
     try {
       const [applications, profile] = await Promise.all([
         api.get<CourseApplication[]>("/api/applications/mine"),
         api.get<Profile | null>("/api/profile/me"),
       ]);
       setMyProfile(profile);
+      setCached(PROFILE_CACHE_KEY, profile);
 
       const coDevApps = applications.filter((a) => a.type === "співавтор");
       const items = await Promise.all(
@@ -64,13 +89,15 @@ export default function MyCourses() {
         }),
       );
       setCoDeveloperItems(items);
+      setCached(CO_DEV_CACHE_KEY, items);
+      hasLoadedCoDevOnce.current = true;
     } finally {
       setIsCoDevLoading(false);
     }
   }, []);
 
-  const loadAuthor = useCallback(async () => {
-    setIsAuthorLoading(true);
+  const loadAuthor = useCallback(async (silent = false) => {
+    if (!silent && !hasLoadedAuthorOnce.current) setIsAuthorLoading(true);
     try {
       const courses = await api.get<Course[]>("/api/courses/mine");
       const items = await Promise.all(
@@ -103,6 +130,8 @@ export default function MyCourses() {
         }),
       );
       setAuthorItems(items);
+      setCached(AUTHOR_CACHE_KEY, items);
+      hasLoadedAuthorOnce.current = true;
     } finally {
       setIsAuthorLoading(false);
     }
@@ -112,20 +141,82 @@ export default function MyCourses() {
     if (!user) return;
     loadCoDeveloper();
     loadAuthor();
-  }, [user, loadCoDeveloper, loadAuthor]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
+  // Скасувати одну заявку — прибираємо її локально, без повного перезавантаження
   async function cancelApplication(applicationId: string) {
-    if (!confirm("Скасувати цю заявку?")) return;
     await api.del(`/api/applications/${applicationId}`);
-    loadCoDeveloper();
+    setCoDeveloperItems((prev) => {
+      const next = prev.filter(
+        (item) => item.application._id !== applicationId,
+      );
+      setCached(CO_DEV_CACHE_KEY, next);
+      return next;
+    });
   }
 
+  // Скасувати всі заявки, що очікують, по курсу — так само локально
+  async function cancelAllPending(applications: CourseApplication[]) {
+    if (!confirm("Скасувати заявку на цей курс?")) return;
+    const idsToCancel = applications
+      .filter((a) => a.status === "очікує")
+      .map((a) => a._id);
+    await Promise.all(
+      idsToCancel.map((id) => api.del(`/api/applications/${id}`)),
+    );
+    setCoDeveloperItems((prev) => {
+      const next = prev.filter(
+        (item) => !idsToCancel.includes(item.application._id),
+      );
+      setCached(CO_DEV_CACHE_KEY, next);
+      return next;
+    });
+  }
+
+  // Прийняти/відхилити заявку — міняємо статус лише в потрібному елементі
   async function respondToApplication(
     applicationId: string,
     status: "підтверджено" | "відхилено",
   ) {
     await api.patch(`/api/applications/${applicationId}`, { status });
-    loadAuthor();
+    setAuthorItems((prev) => {
+      const next = prev.map((item) => ({
+        ...item,
+        applications: item.applications.map((a) =>
+          a._id === applicationId ? { ...a, status } : a,
+        ),
+      }));
+      setCached(AUTHOR_CACHE_KEY, next);
+      return next;
+    });
+  }
+
+  // Завершити/відкрити набір — оновлюємо статус тільки цього курсу
+  async function closeEnrollment(courseId: string) {
+    await api.put<Course>(`/api/courses/${courseId}`, { status: "Закрито" });
+    setAuthorItems((prev) => {
+      const next = prev.map((item) =>
+        item.course._id === courseId
+          ? { ...item, course: { ...item.course, status: "Закрито" as const } }
+          : item,
+      );
+      setCached(AUTHOR_CACHE_KEY, next);
+      return next;
+    });
+  }
+
+  async function reopenEnrollment(courseId: string) {
+    await api.put<Course>(`/api/courses/${courseId}`, { status: "Відкрито" });
+    setAuthorItems((prev) => {
+      const next = prev.map((item) =>
+        item.course._id === courseId
+          ? { ...item, course: { ...item.course, status: "Відкрито" as const } }
+          : item,
+      );
+      setCached(AUTHOR_CACHE_KEY, next);
+      return next;
+    });
   }
 
   if (isAuthLoading) {
@@ -188,7 +279,7 @@ export default function MyCourses() {
             }`}
           >
             Я співрозробник
-            <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1 rounded-full bg-du-gray-200 text-du-gray-700 text-xs">
+            <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1 rounded-full bg-du-black text-du-white text-xs">
               {coDeveloperItems.length}
             </span>
           </button>
@@ -201,7 +292,7 @@ export default function MyCourses() {
             }`}
           >
             Я автор
-            <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1 rounded-full bg-du-gray-200 text-du-gray-700 text-xs">
+            <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1 rounded-full bg-du-black text-du-white text-xs">
               {authorItems.length}
             </span>
           </button>
@@ -218,91 +309,182 @@ export default function MyCourses() {
                 Ви ще не подавали заявок як співрозробник.
               </p>
             ) : (
-              coDeveloperItems.map(({ application, course }) => {
-                const isPending = application.status === "очікує";
-                return (
-                  <div
-                    key={application._id}
-                    className="bg-du-gray-100 rounded-[20px] p-6"
-                  >
-                    {course ? (
-                      <>
-                        <Link
-                          href={`/shared-development/course/${course._id}`}
-                          className="text-xl font-bold text-du-black hover:underline"
-                        >
-                          {course.title}
-                        </Link>
-                        <p className="text-du-gray-700 text-sm mt-2 mb-4">
-                          {course.description}
-                        </p>
-                      </>
-                    ) : (
-                      <p className="text-du-gray-500 text-sm italic mb-4">
-                        Курс тимчасово недоступний.
-                      </p>
-                    )}
-                    <div className="flex flex-wrap gap-1.5 mb-4">
-                      {isPending ? (
-                        <span className="bg-du-yellow-deep text-du-gray-700 text-xs px-3 py-1 rounded-full font-semibold">
-                          {STATUS_LABEL[course.status]}
-                        </span>
-                      ) : application.status === "підтверджено" ? (
-                        <span className="bg-emerald-600 text-du-white text-xs px-3 py-1 rounded-full font-semibold">
-                          Вашу заявку прийнято
-                        </span>
-                      ) : (
-                        <span className="bg-red-600 text-du-white text-xs px-3 py-1 rounded-full font-semibold">
-                          Вашу заявку відхилено
-                        </span>
-                      )}
-                      <span className="bg-du-black text-du-white text-xs px-3 py-1 rounded-full font-semibold">
-                        {course.specialty}
-                      </span>
-                    </div>
+              (() => {
+                const grouped = new Map<string, CoDeveloperGroup>();
+                coDeveloperItems.forEach(({ application, course }) => {
+                  const key = application.courseId;
+                  if (!grouped.has(key)) {
+                    grouped.set(key, { course, applications: [] });
+                  }
+                  grouped.get(key)!.applications.push(application);
+                });
 
-                    {isPending && (
-                      <div className="bg-du-white rounded-2xl p-5">
-                        <div className="flex items-start justify-between gap-4 mb-3">
-                          <div>
-                            <h4 className="font-bold mb-1">Ваша заявка</h4>
-                            <p className="text-du-gray-500 text-sm">
-                              Перегляньте заявку, як кандидата, яку отримає
-                              автор курсу.
-                            </p>
-                          </div>
-                          <button
-                            onClick={() => cancelApplication(application._id)}
-                            className="btn-pill btn-pill-outline text-sm py-2 px-4 shrink-0"
-                          >
-                            Скасувати заявку
-                          </button>
-                        </div>
-                        <div className="border-t border-du-gray-200 pt-3">
-                          <div className="font-semibold text-sm mb-1">
-                            {myProfile?.fullName || "Ваш профіль не заповнений"}
-                          </div>
-                          {myProfile?.about && (
-                            <p className="text-du-gray-500 text-sm mb-2">
-                              {myProfile.about}
+                const rawAbout = myProfile?.about || "";
+                const myAboutTruncated =
+                  rawAbout.length > 200
+                    ? rawAbout.slice(0, 200) + "..."
+                    : rawAbout;
+
+                return Array.from(grouped.entries()).map(
+                  ([courseId, { course, applications }]) => {
+                    const rawDescription = course?.description || "";
+                    const descriptionTruncated =
+                      rawDescription.length > 200
+                        ? rawDescription.slice(0, 200) + "..."
+                        : rawDescription;
+
+                    const hasConfirmed = applications.some(
+                      (a) => a.status === "підтверджено",
+                    );
+                    const allRejected = applications.every(
+                      (a) => a.status === "відхилено",
+                    );
+                    const hasPending = applications.some(
+                      (a) => a.status === "очікує",
+                    );
+                    const isExpanded = expandedCoDevCourseId === courseId;
+
+                    return (
+                      <div
+                        key={courseId}
+                        style={{
+                          backgroundColor: "rgba(234,234,234,1)",
+                          ...(isExpanded
+                            ? { border: "2px solid rgba(234,234,234,1)" }
+                            : {}),
+                        }}
+                      >
+                        <div
+                          onClick={() =>
+                            setExpandedCoDevCourseId(
+                              isExpanded ? null : courseId,
+                            )
+                          }
+                          className="p-6 cursor-pointer"
+                        >
+                          {course ? (
+                            <>
+                              <Link
+                                href={`/shared-development/course/${course._id}`}
+                                onClick={(e) => e.stopPropagation()}
+                                className="text-xl font-bold text-du-black hover:underline"
+                              >
+                                {course.title}
+                              </Link>
+                              <p className="text-du-gray-700 text-sm mt-2 mb-4">
+                                {descriptionTruncated}
+                              </p>
+                              <div className="flex flex-wrap gap-1.5">
+                                {hasConfirmed ? (
+                                  <span
+                                    className="text-white text-xs px-3 py-1 rounded-full font-semibold"
+                                    style={{ background: "rgba(4,198,93,1)" }}
+                                  >
+                                    Вашу заявку прийнято
+                                  </span>
+                                ) : allRejected ? (
+                                  <span
+                                    className="text-white text-xs px-3 py-1 rounded-full font-semibold"
+                                    style={{ background: "rgba(255,56,0,1)" }}
+                                  >
+                                    Вашу заявку відхилено
+                                  </span>
+                                ) : (
+                                  <span className="bg-du-yellow-deep text-du-gray-700 text-xs px-3 py-1 rounded-full font-semibold">
+                                    {course.status === "Закрито"
+                                      ? "Набір закрито"
+                                      : "Набір відкрито"}
+                                  </span>
+                                )}
+                                <span className="bg-du-black text-du-white text-xs px-3 py-1 rounded-full font-semibold">
+                                  {course.specialty}
+                                </span>
+                              </div>
+                            </>
+                          ) : (
+                            <p className="text-du-gray-500 text-sm italic">
+                              Курс тимчасово недоступний.
                             </p>
                           )}
-                          <div className="flex flex-wrap gap-1.5">
-                            {(myProfile?.roles || []).map((r, i) => (
-                              <span
-                                key={i}
-                                className="bg-du-gray-100 text-du-gray-700 text-xs px-2.5 py-1 rounded-full font-medium"
-                              >
-                                {r}
-                              </span>
-                            ))}
-                          </div>
                         </div>
+
+                        {isExpanded && (
+                          <div className="bg-du-white p-5">
+                            <div className="flex items-start justify-between gap-4 mb-3">
+                              <div>
+                                <h4 className="font-bold mb-1">Ваша заявка</h4>
+                                <p className="text-du-gray-500 text-sm">
+                                  Перегляньте заявку, як кандидата, яку отримає
+                                  автор курсу.
+                                </p>
+                              </div>
+                              {hasPending && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    cancelAllPending(applications);
+                                  }}
+                                  className="btn-pill btn-pill-outline text-sm py-2 px-4 shrink-0"
+                                >
+                                  Скасувати заявку
+                                </button>
+                              )}
+                            </div>
+                            <div className="space-y-3">
+                              {applications.map((a) => (
+                                <div
+                                  key={a._id}
+                                  className="flex items-center gap-4 p-4"
+                                  style={{ background: "rgba(231,238,243,1)" }}
+                                >
+                                  <div className="min-w-0 flex-1">
+                                    <div className="font-semibold text-sm mb-1">
+                                      {myProfile?.fullName ||
+                                        "Ваш профіль не заповнений"}
+                                    </div>
+                                    {myAboutTruncated && (
+                                      <p className="text-du-gray-500 text-sm">
+                                        {myAboutTruncated}
+                                      </p>
+                                    )}
+                                  </div>
+
+                                  <span className="bg-du-white text-du-gray-700 text-xs px-2.5 py-1 rounded-full font-medium shrink-0">
+                                    {a.role}
+                                  </span>
+
+                                  <div className="shrink-0 min-w-[168px] flex justify-end">
+                                    {a.status === "підтверджено" && (
+                                      <span
+                                        className="text-white text-xs px-2.5 py-1 rounded-full font-semibold"
+                                        style={{
+                                          background: "rgba(4,198,93,1)",
+                                        }}
+                                      >
+                                        Вашу заявку прийнято
+                                      </span>
+                                    )}
+                                    {a.status === "відхилено" && (
+                                      <span
+                                        className="text-white text-xs px-2.5 py-1 rounded-full font-semibold"
+                                        style={{
+                                          background: "rgba(255,56,0,1)",
+                                        }}
+                                      >
+                                        Вашу заявку відхилено
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
+                    );
+                  },
                 );
-              })
+              })()
             )}
           </div>
         )}
@@ -324,7 +506,15 @@ export default function MyCourses() {
                 );
                 const isExpanded = expandedCourseId === course._id;
                 return (
-                  <div key={course._id} className="bg-du-gray-100">
+                  <div
+                    key={course._id}
+                    style={{
+                      backgroundColor: "rgba(234,234,234,1)",
+                      ...(isExpanded
+                        ? { border: "2px solid rgba(234,234,234,1)" }
+                        : {}),
+                    }}
+                  >
                     <div
                       onClick={() =>
                         setExpandedCourseId(isExpanded ? null : course._id)
@@ -385,12 +575,19 @@ export default function MyCourses() {
                           <h4 className="font-bold text-lg">
                             Заявки від співробітників
                           </h4>
-                          {course.status === "Відкрито" && (
+                          {course.status === "Відкрито" ? (
                             <button
                               onClick={() => closeEnrollment(course._id)}
                               className="btn-pill btn-pill-outline text-sm py-2 px-4 shrink-0"
                             >
                               Завершити набір
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => reopenEnrollment(course._id)}
+                              className="btn-pill btn-pill-black text-sm py-2 px-4 shrink-0"
+                            >
+                              Відкрити набір
                             </button>
                           )}
                         </div>
@@ -493,9 +690,4 @@ export default function MyCourses() {
       )}
     </div>
   );
-}
-
-async function closeEnrollment(courseId: string) {
-  await api.put<Course>(`/api/courses/${courseId}`, { status: "Закрито" });
-  loadAuthor();
 }

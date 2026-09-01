@@ -8,6 +8,7 @@ import { SharedDevelopmentHeader } from "@/components/SharedDevelopmentHeader";
 import { api, useAuth, ApiError } from "@/context/AuthContext";
 import type { Profile } from "@/types/course";
 import { SearchIcon, ChevronDownIcon, ChevronUpIcon } from "@/components/icons";
+import { AutoResizeTextarea } from "@/components/AutoResizeTextarea";
 
 export default function ProfilePage() {
   const { user, isLoading: isAuthLoading } = useAuth();
@@ -86,6 +87,7 @@ export default function ProfilePage() {
       setMySpecialties(updated.specialties);
       setMyRoles(updated.roles);
       setSaved(true);
+      window.dispatchEvent(new Event("profile-updated"));
     } catch (err) {
       setError(
         err instanceof ApiError ? err.message : "Не вдалося зберегти профіль",
@@ -176,12 +178,11 @@ export default function ProfilePage() {
             </div>
 
             <div>
-              <input
-                type="text"
+              <AutoResizeTextarea
                 value={about}
-                onChange={(e) => setAbout(e.target.value)}
+                onChange={setAbout}
                 placeholder="Коротко про себе та свій досвід"
-                className="w-full bg-transparent border-b border-du-gray-500 pb-2 text-sm focus:outline-none focus:border-du-black placeholder:text-du-gray-500"
+                className="w-full"
               />
             </div>
 
@@ -258,11 +259,15 @@ export default function ProfilePage() {
                       type="button"
                       key={r}
                       onClick={() => handleRoleChange(r)}
-                      className={`text-sm px-4 py-2 rounded-full font-medium transition ${
+                      className="text-sm px-4 py-2 rounded-full font-medium transition"
+                      style={
                         selected
-                          ? "bg-du-yellow-deep text-du-gray-700"
-                          : "bg-du-gray-100 text-du-gray-500 hover:bg-du-gray-200"
-                      }`}
+                          ? { background: "rgba(91,90,255,1)", color: "#fff" }
+                          : {
+                              background: "rgba(255,219,77,1)",
+                              color: "#1a1a1a",
+                            }
+                      }
                     >
                       {r}
                     </button>
