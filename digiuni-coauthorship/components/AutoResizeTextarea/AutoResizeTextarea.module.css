@@ -1,0 +1,18 @@
+.textarea {
+  width: 100%;
+  resize: none;
+  overflow: hidden;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--du-gray-500);
+  padding-bottom: 8px;
+  font-size: 14px;
+}
+
+.textarea:focus {
+  outline: none;
+}
+
+.textarea::placeholder {
+  color: var(--du-gray-500);
+}

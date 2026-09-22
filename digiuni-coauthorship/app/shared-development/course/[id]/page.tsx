@@ -4,14 +4,19 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { specialties } from "@/data/specialties";
 import { roles } from "@/data/roles";
-import { ModuleBreadcrumb } from "@/components/Header";
-import { SharedDevelopmentHeader } from "@/components/SharedDevelopmentHeader";
-import { SearchIcon, ChevronDownIcon, ChevronUpIcon } from "@/components/icons";
+import { ModuleBreadcrumb } from "@/components/Header/Header";
+import { SharedDevelopmentHeader } from "@/components/SharedDevelopmentHeader/SharedDevelopmentHeader";
+import {
+  SearchIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+} from "@/components/icons/icons";
 import { api, useAuth, ApiError } from "@/context/AuthContext";
-import { ApplicantProfileModal } from "@/components/ApplicantProfileModal";
+import { ApplicantProfileModal } from "@/components/ApplicantProfileModal/ApplicantProfileModal";
+import { MessageModal } from "@/components/MessageModal/MessageModal";
+import { AutoResizeTextarea } from "@/components/AutoResizeTextarea/AutoResizeTextarea";
 import type { Course, CourseApplication, Profile } from "@/types/course";
-import { AutoResizeTextarea } from "@/components/AutoResizeTextarea";
-import { MessageModal } from "@/components/MessageModal";
+import styles from "./page.module.css";
 
 export default function CourseViewPage({
   params,
@@ -226,14 +231,14 @@ export default function CourseViewPage({
 
   if (isLoading) {
     return (
-      <div className="flex flex-col flex-1">
+      <div className={styles.wrapper}>
         <ModuleBreadcrumb
           items={[
             { label: "Спільна розробка курсів", href: "/shared-development" },
           ]}
         />
-        <div className="max-w-[1440px] mx-auto w-full px-20 py-10 text-du-gray-500">
-          Завантаження...
+        <div className={styles.content}>
+          <p className={styles.stateText}>Завантаження...</p>
         </div>
       </div>
     );
@@ -241,14 +246,14 @@ export default function CourseViewPage({
 
   if (notFound || !course) {
     return (
-      <div className="flex flex-col flex-1">
+      <div className={styles.wrapper}>
         <ModuleBreadcrumb
           items={[
             { label: "Спільна розробка курсів", href: "/shared-development" },
           ]}
         />
-        <div className="max-w-[1440px] mx-auto w-full px-20 py-10 text-du-gray-500">
-          Курс не знайдено.
+        <div className={styles.content}>
+          <p className={styles.stateText}>Курс не знайдено.</p>
         </div>
       </div>
     );
@@ -259,7 +264,7 @@ export default function CourseViewPage({
     .map((a) => a.role);
 
   return (
-    <div className="flex flex-col flex-1">
+    <div className={styles.wrapper}>
       <ModuleBreadcrumb
         items={[
           { label: "Спільна розробка курсів", href: "/shared-development" },
@@ -267,7 +272,7 @@ export default function CourseViewPage({
         ]}
       />
 
-      <div className="max-w-[1440px] mx-auto w-full px-20 pt-4 pb-10">
+      <div className={styles.content}>
         {isEditing ? (
           <>
             <SharedDevelopmentHeader
@@ -275,25 +280,19 @@ export default function CourseViewPage({
               subtitle="Опишіть курс, оберіть спеціальність і позначте, які ролі співавторів вам потрібні — від графічного дизайнера до фахівця зі ШІ."
             />
 
-            <div className="max-w-2xl">
-              <h2 className="inline-block text-2xl font-bold border-b-2 border-du-blue pb-1.5 mb-8">
-                Редагування курсу
-              </h2>
+            <div className={styles.editForm}>
+              <h2 className={styles.editHeading}>Редагування курсу</h2>
 
-              {error && (
-                <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl p-2.5 mb-5">
-                  {error}
-                </p>
-              )}
+              {error && <p className={styles.errorBox}>{error}</p>}
 
-              <div className="space-y-7">
+              <div className={styles.fieldGroup}>
                 <div>
                   <input
                     type="text"
                     value={title}
                     onChange={(e) => setTitle(e.target.value)}
                     placeholder="Назва курсу"
-                    className="w-full bg-transparent border-b border-du-gray-500 pb-2 text-sm focus:outline-none focus:border-du-black placeholder:text-du-gray-500"
+                    className={styles.underlineInput}
                   />
                 </div>
 
@@ -302,25 +301,26 @@ export default function CourseViewPage({
                     value={description}
                     onChange={setDescription}
                     placeholder="Короткий опис курсу"
-                    className="w-full"
                   />
                 </div>
 
-                <div className="relative" ref={specialtyPickerRef}>
+                <div className={styles.comboWrap} ref={specialtyPickerRef}>
                   <button
                     type="button"
                     onClick={() => setShowSpecialtyPicker((v) => !v)}
-                    className="w-full flex items-center gap-2 border-b border-du-gray-500 pb-2 text-sm text-left"
+                    className={styles.comboTrigger}
                   >
-                    <SearchIcon className="w-4 h-4 text-du-gray-500" />
+                    <SearchIcon className="w-4 h-4" />
                     <span
-                      className={
-                        specialty ? "text-du-black" : "text-du-gray-500"
-                      }
+                      style={{
+                        color: specialty
+                          ? "var(--du-black)"
+                          : "var(--du-gray-500)",
+                      }}
                     >
                       {specialty || "Спеціальність курсу"}
                     </span>
-                    <span className="ml-auto text-du-gray-500">
+                    <span className={styles.comboChevron}>
                       {showSpecialtyPicker ? (
                         <ChevronUpIcon className="w-4 h-4" />
                       ) : (
@@ -330,14 +330,11 @@ export default function CourseViewPage({
                   </button>
 
                   {showSpecialtyPicker && (
-                    <div className="absolute z-20 mt-2 w-full max-h-64 overflow-y-auto bg-du-white border border-du-gray-200">
+                    <div className={styles.comboDropdown}>
                       {specialties.map((s) => {
                         const value = `${s.code} ${s.name}`;
                         return (
-                          <label
-                            key={s.code}
-                            className="flex items-center gap-3 text-sm p-3 hover:bg-du-gray-50 cursor-pointer border-b border-du-gray-100 last:border-b-0"
-                          >
+                          <label key={s.code} className={styles.comboOption}>
                             <input
                               type="radio"
                               name="course-specialty-edit"
@@ -357,10 +354,8 @@ export default function CourseViewPage({
                 </div>
 
                 <div>
-                  <p className="text-sm text-du-gray-500 mb-3">
-                    Яких фахівців шукаєте
-                  </p>
-                  <div className="flex flex-wrap gap-2">
+                  <p className={styles.rolesLabel}>Яких фахівців шукаєте</p>
+                  <div className={styles.rolesGrid}>
                     {roles.map((r) => {
                       const selected = requiredRoles.includes(r);
                       return (
@@ -368,7 +363,7 @@ export default function CourseViewPage({
                           type="button"
                           key={r}
                           onClick={() => handleRoleToggle(r)}
-                          className="text-sm px-4 py-2 rounded-full font-medium transition"
+                          className={styles.roleChip}
                           style={
                             selected
                               ? {
@@ -388,7 +383,7 @@ export default function CourseViewPage({
                   </div>
                 </div>
 
-                <div className="flex gap-3">
+                <div className={styles.editActions}>
                   <button
                     onClick={handleSave}
                     disabled={isSaving || !title || !specialty}
@@ -409,7 +404,7 @@ export default function CourseViewPage({
         ) : (
           <>
             {isAuthor && (
-              <div className="flex justify-end gap-2 mb-4">
+              <div className={styles.topActions}>
                 {course.status === "Відкрито" ? (
                   <button
                     onClick={handleCloseEnrollment}
@@ -434,145 +429,106 @@ export default function CourseViewPage({
               </div>
             )}
 
-            {error && (
-              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl p-2.5 mb-5">
-                {error}
-              </p>
-            )}
+            {error && <p className={styles.errorBox}>{error}</p>}
 
-            <div className="grid md:grid-cols-[1fr_400px] gap-8 items-start">
+            <div className={styles.viewGrid}>
               <div>
-                <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-3">
-                  {course.title}
-                </h1>
-                <span className="inline-block bg-du-black text-du-white text-xs px-3 py-1 rounded-full font-semibold mb-6">
-                  {course.specialty}
-                </span>
+                <h1 className={styles.title}>{course.title}</h1>
+                <span className={styles.specialtyTag}>{course.specialty}</span>
 
-                <h2 className="text-xl font-bold border-b border-du-gray-200 pb-2 mb-4">
-                  Опис курсу
-                </h2>
-                <p className="text-du-gray-700 whitespace-pre-line leading-relaxed">
-                  {course.description}
-                </p>
+                <h2 className={styles.sectionHeading}>Опис курсу</h2>
+                <p className={styles.description}>{course.description}</p>
               </div>
 
-              <div
-                className={
-                  isAuthor
-                    ? "bg-du-white p-6 md:sticky md:top-6"
-                    : "bg-du-white md:sticky md:top-6"
-                }
-                style={
-                  !isAuthor ? { border: "2px solid rgba(0,0,0,1)" } : undefined
-                }
-              >
-                {isAuthor ? (
-                  <>
-                    <div className="flex items-center justify-between gap-3 mb-4">
-                      <h3 className="font-bold text-lg">
-                        Заявки від співрозробників
-                      </h3>
-                      <Link
-                        href="/messages"
-                        className="text-sm text-du-blue font-medium hover:underline shrink-0"
-                      >
-                        Повідомлення
-                      </Link>
-                    </div>
-                    {applications.length === 0 ? (
-                      <p className="text-sm text-du-gray-500 italic">
-                        Поки що немає жодної заявки.
-                      </p>
-                    ) : (
-                      <div className="space-y-3">
-                        {applications.map((app) => (
-                          <div
-                            key={app._id}
-                            className="p-4"
-                            style={{ background: "rgba(231,238,243,1)" }}
-                          >
-                            <div className="flex items-center justify-between gap-3 mb-1">
+              {isAuthor ? (
+                <div className={styles.authorSidebar}>
+                  <div className={styles.authorSidebarHeaderRow}>
+                    <h3 className={styles.authorSidebarTitle}>
+                      Заявки від співрозробників
+                    </h3>
+                    <Link href="/messages" className={styles.messagesLink}>
+                      Повідомлення
+                    </Link>
+                  </div>
+                  {applications.length === 0 ? (
+                    <p className={styles.emptyHint}>
+                      Поки що немає жодної заявки.
+                    </p>
+                  ) : (
+                    <div className={styles.applicationRows}>
+                      {applications.map((app) => (
+                        <div key={app._id} className={styles.applicationRow}>
+                          <div className={styles.applicationRowTop}>
+                            <button
+                              onClick={() =>
+                                setViewedApplicantId(app.applicantId)
+                              }
+                              className={styles.applicantNameButton}
+                            >
+                              {applicantNames[app.applicantId] || "..."}
+                            </button>
+                            <button
+                              onClick={() => {
+                                setMessageTarget(app.applicantId);
+                                setShowMessageModal(true);
+                              }}
+                              className={styles.writeButton}
+                            >
+                              Написати
+                            </button>
+                          </div>
+                          <div className={styles.applicationRoleText}>
+                            {app.type === "співавтор"
+                              ? `Роль: ${app.role}`
+                              : "Записався як слухач"}
+                          </div>
+                          {app.status === "очікує" ? (
+                            <div className={styles.applicationActions}>
                               <button
                                 onClick={() =>
-                                  setViewedApplicantId(app.applicantId)
+                                  handleApplicationStatus(app._id, "відхилено")
                                 }
-                                className="font-semibold text-sm hover:underline text-left"
+                                className="btn-pill btn-pill-outline text-xs py-1.5 px-3"
                               >
-                                {applicantNames[app.applicantId] || "..."}
+                                Відхилити
                               </button>
                               <button
-                                onClick={() => {
-                                  setMessageTarget(app.applicantId);
-                                  setShowMessageModal(true);
-                                }}
-                                className="text-xs text-du-blue font-medium hover:underline shrink-0"
+                                onClick={() =>
+                                  handleApplicationStatus(
+                                    app._id,
+                                    "підтверджено",
+                                  )
+                                }
+                                className="btn-pill btn-pill-black text-xs py-1.5 px-3"
                               >
-                                Написати
+                                Прийняти
                               </button>
                             </div>
-                            <div className="text-xs text-du-gray-500 mb-3">
-                              {app.type === "співавтор"
-                                ? `Роль: ${app.role}`
-                                : "Записався як слухач"}
-                            </div>
-                            {app.status === "очікує" ? (
-                              <div className="flex gap-2">
-                                <button
-                                  onClick={() =>
-                                    handleApplicationStatus(
-                                      app._id,
-                                      "відхилено",
-                                    )
-                                  }
-                                  className="btn-pill btn-pill-outline text-xs py-1.5 px-3"
-                                >
-                                  Відхилити
-                                </button>
-                                <button
-                                  onClick={() =>
-                                    handleApplicationStatus(
-                                      app._id,
-                                      "підтверджено",
-                                    )
-                                  }
-                                  className="btn-pill btn-pill-black text-xs py-1.5 px-3"
-                                >
-                                  Прийняти
-                                </button>
-                              </div>
-                            ) : (
-                              <span
-                                className={`text-xs font-semibold px-3 py-1 rounded-full ${
-                                  app.status === "підтверджено"
-                                    ? "bg-emerald-600 text-du-white"
-                                    : "bg-red-600 text-du-white"
-                                }`}
-                              >
-                                {app.status === "підтверджено"
-                                  ? "Прийнято"
-                                  : "Відхилено"}
-                              </span>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </>
-                ) : !user ? (
-                  <div className="p-6">
-                    <h3
-                      style={{
-                        fontFamily: '"Diya", var(--font-manrope), sans-serif',
-                        fontWeight: 600,
-                        fontSize: "38px",
-                        lineHeight: "40px",
-                      }}
-                      className="mb-2"
-                    >
+                          ) : (
+                            <span
+                              className={
+                                app.status === "підтверджено"
+                                  ? styles.statusConfirmed
+                                  : styles.statusRejected
+                              }
+                            >
+                              {app.status === "підтверджено"
+                                ? "Прийнято"
+                                : "Відхилено"}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ) : !user ? (
+                <div className={styles.guestBox}>
+                  <div className={styles.guestPad}>
+                    <h3 className={styles.guestTitleMb}>
                       Бажаєте стати співавтором?
                     </h3>
-                    <p className="text-sm text-du-gray-500">
+                    <p className={styles.guestText}>
                       Щоб подати заявку на курс,{" "}
                       <Link
                         href="/login"
@@ -583,153 +539,106 @@ export default function CourseViewPage({
                       .
                     </p>
                   </div>
-                ) : course.status === "Закрито" ? (
-                  <div className="p-6">
-                    <h3
-                      style={{
-                        fontFamily: '"Diya", var(--font-manrope), sans-serif',
-                        fontWeight: 600,
-                        fontSize: "38px",
-                        lineHeight: "40px",
-                      }}
-                      className="mb-2"
-                    >
-                      Набір завершено
-                    </h3>
-                    <p className="text-sm text-du-gray-500">
+                </div>
+              ) : course.status === "Закрито" ? (
+                <div className={styles.guestBox}>
+                  <div className={styles.guestPad}>
+                    <h3 className={styles.guestTitleMb}>Набір завершено</h3>
+                    <p className={styles.guestText}>
                       Автор курсу вже закрив набір співрозробників.
                     </p>
                   </div>
-                ) : (
-                  <>
-                    <div className="p-6">
-                      <div
-                        className="w-[352px]"
-                        style={{
-                          borderBottom: "2px solid rgba(0,0,0,1)",
-                          paddingBottom: "16px",
-                        }}
-                      >
-                        <h3
-                          style={{
-                            fontFamily:
-                              '"Diya", var(--font-manrope), sans-serif',
-                            fontWeight: 600,
-                            fontSize: "38px",
-                            lineHeight: "40px",
-                            letterSpacing: "0%",
-                          }}
-                        >
-                          Бажаєте стати співавтором?
-                        </h3>
-                      </div>
-                      <button
-                        onClick={() => {
-                          setMessageTarget(course.authorId);
-                          setShowMessageModal(true);
-                        }}
-                        className="text-sm text-du-blue font-medium hover:underline mt-3"
-                      >
-                        Написати автору курсу
-                      </button>
+                </div>
+              ) : (
+                <div className={styles.guestBox}>
+                  <div className={styles.guestPad}>
+                    <div className={styles.sectionInner}>
+                      <h3 className={styles.guestTitle}>
+                        Бажаєте стати співавтором?
+                      </h3>
                     </div>
+                    <button
+                      onClick={() => {
+                        setMessageTarget(course.authorId);
+                        setShowMessageModal(true);
+                      }}
+                      className="text-sm text-du-blue font-medium hover:underline mt-3"
+                    >
+                      Написати автору курсу
+                    </button>
+                  </div>
 
-                    <div className="p-6">
-                      <div
-                        className="w-[352px]"
-                        style={{
-                          borderBottom: "2px solid rgba(0,0,0,1)",
-                          paddingBottom: "16px",
-                        }}
-                      >
-                        <p
-                          className="mb-4"
-                          style={{
-                            fontFamily:
-                              '"Diya", var(--font-manrope), sans-serif',
-                            fontWeight: 600,
-                            fontSize: "12px",
-                            lineHeight: "16px",
-                            letterSpacing: "-0.24px",
-                            verticalAlign: "middle",
-                            color: "rgba(100,116,139,1)",
-                          }}
-                        >
-                          Оберіть роль, у якій можете допомогти. Автор курсу
-                          отримає вашу заявку.
-                        </p>
+                  <div className={styles.guestPad} style={{ paddingTop: 0 }}>
+                    <div className={styles.sectionInner}>
+                      <p className={styles.rolesHint}>
+                        Оберіть роль, у якій можете допомогти. Автор курсу
+                        отримає вашу заявку.
+                      </p>
 
-                        <div className="flex flex-col gap-2">
-                          {requiredRoles.map((r, i) => {
-                            const alreadyApplied = appliedRoleNames.includes(r);
-                            const selected = selectedApplyRoles.includes(r);
-                            return (
-                              <button
-                                key={i}
-                                type="button"
-                                disabled={alreadyApplied}
-                                onClick={() => toggleApplyRole(r)}
-                                className="text-left text-sm px-4 py-2.5 rounded-full transition"
-                                style={
-                                  alreadyApplied
+                      <div className={styles.applyRoles}>
+                        {requiredRoles.map((r, i) => {
+                          const alreadyApplied = appliedRoleNames.includes(r);
+                          const selected = selectedApplyRoles.includes(r);
+                          return (
+                            <button
+                              key={i}
+                              type="button"
+                              disabled={alreadyApplied}
+                              onClick={() => toggleApplyRole(r)}
+                              className={styles.applyRoleButton}
+                              style={
+                                alreadyApplied
+                                  ? {
+                                      background: "rgba(234,234,234,1)",
+                                      color: "rgba(140,140,140,1)",
+                                      cursor: "default",
+                                    }
+                                  : selected
                                     ? {
                                         background: "rgba(234,234,234,1)",
-                                        color: "rgba(140,140,140,1)",
-                                        cursor: "default",
+                                        color: "#000",
                                       }
-                                    : selected
-                                      ? {
-                                          background: "rgba(234,234,234,1)",
-                                          color: "#000",
-                                        }
-                                      : {
-                                          border: "2px solid rgba(0,0,0,1)",
-                                          color: "#000",
-                                        }
-                                }
-                              >
-                                {r}
-                              </button>
-                            );
-                          })}
-                        </div>
+                                    : {
+                                        border: "2px solid rgba(0,0,0,1)",
+                                        color: "#000",
+                                      }
+                              }
+                            >
+                              {r}
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
+                  </div>
 
-                    <div className="p-6">
-                      {appliedRoleNames.length < requiredRoles.length && (
-                        <button
-                          onClick={handleApplyAsCoauthor}
-                          disabled={
-                            isApplying || selectedApplyRoles.length === 0
-                          }
-                          className="w-full btn-pill btn-pill-black btn-outline-on-hover text-sm py-2.5 disabled:opacity-40 disabled:cursor-not-allowed"
-                        >
-                          Подати заявку
-                        </button>
-                      )}
+                  <div className={styles.guestPad} style={{ paddingTop: 0 }}>
+                    {appliedRoleNames.length < requiredRoles.length && (
+                      <button
+                        onClick={handleApplyAsCoauthor}
+                        disabled={isApplying || selectedApplyRoles.length === 0}
+                        className="w-full btn-pill btn-pill-black btn-outline-on-hover text-sm py-2.5 disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        Подати заявку
+                      </button>
+                    )}
 
-                      {appliedRoleNames.length > 0 && (
-                        <div
-                          className={`text-center text-sm font-medium p-4 ${
-                            appliedRoleNames.length < requiredRoles.length
-                              ? "mt-4"
-                              : ""
-                          }`}
-                          style={{
-                            background: "rgba(255,247,219,1)",
-                            color: "#1a1a1a",
-                          }}
-                        >
-                          Заявку надіслано.
-                          <br />
-                          Автор курсу побачить вашу роль і профіль.
-                        </div>
-                      )}
-                    </div>
-                  </>
-                )}
-              </div>
+                    {appliedRoleNames.length > 0 && (
+                      <div
+                        className={
+                          appliedRoleNames.length < requiredRoles.length
+                            ? styles.sentBannerMt
+                            : styles.sentBanner
+                        }
+                      >
+                        Заявку надіслано.
+                        <br />
+                        Автор курсу побачить вашу роль і профіль.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </>
         )}

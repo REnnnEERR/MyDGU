@@ -3,11 +3,16 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { specialties } from "@/data/specialties";
 import { roles } from "@/data/roles";
-import { ModuleBreadcrumb } from "@/components/Header";
-import { SharedDevelopmentHeader } from "@/components/SharedDevelopmentHeader";
+import { ModuleBreadcrumb } from "@/components/Header/Header";
+import { SharedDevelopmentHeader } from "@/components/SharedDevelopmentHeader/SharedDevelopmentHeader";
 import { api } from "@/context/AuthContext";
 import type { Course, Profile } from "@/types/course";
-import { SearchIcon, ChevronDownIcon, ChevronUpIcon } from "@/components/icons";
+import {
+  SearchIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+} from "@/components/icons/icons";
+import styles from "./page.module.css";
 
 const PAGE_SIZE = 4;
 
@@ -86,20 +91,20 @@ export default function SharedDevelopment() {
   const hasMore = visibleCount < courses.length;
 
   return (
-    <div className="flex flex-col flex-1">
+    <div className={styles.wrapper}>
       <ModuleBreadcrumb items={[{ label: "Спільна розробка курсів" }]} />
 
-      <div className="max-w-[1440px] mx-auto w-full px-20 pt-4 pb-10">
+      <div className={styles.content}>
         <SharedDevelopmentHeader active="catalog" />
 
-        <div className="flex flex-nowrap items-center gap-3 mb-8">
-          <div className="relative flex-1">
+        <div className={styles.filterRow}>
+          <div className={styles.searchWrap}>
             <input
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Пошук за назвою ..."
-              className="w-full h-[48px] bg-transparent pl-1 pr-11 text-sm focus:outline-none placeholder:text-du-gray-500"
+              className={styles.searchInput}
               style={{
                 ...GRADIENT_BORDER,
                 backgroundSize: "100% 2px",
@@ -107,31 +112,33 @@ export default function SharedDevelopment() {
                 backgroundPosition: "bottom",
               }}
             />
-            <span className="absolute right-4 top-1/2 -translate-y-1/2 text-du-gray-500">
+            <span className={styles.searchIcon}>
               <SearchIcon className="w-4 h-4" />
             </span>
           </div>
 
           <div
-            className="relative shrink-0 w-[252px] rounded-full p-[2px]"
+            className={styles.filterSelect}
             style={GRADIENT_BORDER}
             ref={specFilterRef}
           >
-            <div className="relative rounded-full bg-du-white">
+            <div className={styles.filterSelectInner}>
               <button
                 type="button"
                 onClick={() => setShowSpecFilter((v) => !v)}
-                className="w-full h-[44px] rounded-full bg-transparent pl-5 pr-9 text-sm text-left truncate"
+                className={styles.filterTrigger}
               >
                 <span
-                  className={
-                    selectedSpec ? "text-du-black" : "text-du-gray-500"
-                  }
+                  style={{
+                    color: selectedSpec
+                      ? "var(--du-black)"
+                      : "var(--du-gray-500)",
+                  }}
                 >
                   {selectedSpec || "Спеціальність"}
                 </span>
               </button>
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-du-gray-500 pointer-events-none">
+              <span className={styles.filterChevron}>
                 {showSpecFilter ? (
                   <ChevronUpIcon className="w-4 h-4" />
                 ) : (
@@ -140,14 +147,14 @@ export default function SharedDevelopment() {
               </span>
 
               {showSpecFilter && (
-                <div className="absolute z-20 mt-2 w-full max-h-64 overflow-y-auto bg-du-white border border-du-gray-200 rounded-2xl shadow-lg p-2">
+                <div className={styles.filterDropdown}>
                   <button
                     type="button"
                     onClick={() => {
                       setSelectedSpec("");
                       setShowSpecFilter(false);
                     }}
-                    className="block w-full text-left text-sm p-2 hover:bg-du-gray-50 rounded-lg text-du-gray-500"
+                    className={styles.filterOptionMuted}
                   >
                     Усі спеціальності
                   </button>
@@ -161,7 +168,7 @@ export default function SharedDevelopment() {
                           setSelectedSpec(value);
                           setShowSpecFilter(false);
                         }}
-                        className="block w-full text-left text-sm p-2 hover:bg-du-gray-50 rounded-lg"
+                        className={styles.filterOption}
                       >
                         {value}
                       </button>
@@ -173,25 +180,27 @@ export default function SharedDevelopment() {
           </div>
 
           <div
-            className="relative shrink-0 w-[252px] rounded-full p-[2px]"
+            className={styles.filterSelect}
             style={GRADIENT_BORDER}
             ref={roleFilterRef}
           >
-            <div className="relative rounded-full bg-du-white">
+            <div className={styles.filterSelectInner}>
               <button
                 type="button"
                 onClick={() => setShowRoleFilter((v) => !v)}
-                className="w-full h-[44px] rounded-full bg-transparent pl-5 pr-9 text-sm text-left truncate"
+                className={styles.filterTrigger}
               >
                 <span
-                  className={
-                    selectedRole ? "text-du-black" : "text-du-gray-500"
-                  }
+                  style={{
+                    color: selectedRole
+                      ? "var(--du-black)"
+                      : "var(--du-gray-500)",
+                  }}
                 >
                   {selectedRole || "Роль співавтора"}
                 </span>
               </button>
-              <span className="absolute right-4 top-1/2 -translate-y-1/2 text-du-gray-500 pointer-events-none">
+              <span className={styles.filterChevron}>
                 {showRoleFilter ? (
                   <ChevronUpIcon className="w-4 h-4" />
                 ) : (
@@ -200,14 +209,14 @@ export default function SharedDevelopment() {
               </span>
 
               {showRoleFilter && (
-                <div className="absolute z-20 mt-2 w-full max-h-64 overflow-y-auto bg-du-white border border-du-gray-200 rounded-2xl shadow-lg p-2">
+                <div className={styles.filterDropdown}>
                   <button
                     type="button"
                     onClick={() => {
                       setSelectedRole("");
                       setShowRoleFilter(false);
                     }}
-                    className="block w-full text-left text-sm p-2 hover:bg-du-gray-50 rounded-lg text-du-gray-500"
+                    className={styles.filterOptionMuted}
                   >
                     Усі ролі
                   </button>
@@ -219,7 +228,7 @@ export default function SharedDevelopment() {
                         setSelectedRole(r);
                         setShowRoleFilter(false);
                       }}
-                      className="block w-full text-left text-sm p-2 hover:bg-du-gray-50 rounded-lg"
+                      className={styles.filterOption}
                     >
                       {r}
                     </button>
@@ -231,22 +240,22 @@ export default function SharedDevelopment() {
         </div>
 
         {isLoading ? (
-          <p className="text-du-gray-500 py-10 text-center">Завантаження...</p>
+          <p className={styles.stateText}>Завантаження...</p>
         ) : courses.length === 0 ? (
-          <p className="text-du-gray-500 italic py-10 text-center">
+          <p className={styles.stateTextItalic}>
             Курсів за цими критеріями не знайдено.
           </p>
         ) : (
           <>
-            <div className="grid md:grid-cols-2 gap-6">
+            <div className={styles.grid}>
               {visibleCourses.map((course) => (
                 <Link
                   href={`/shared-development/course/${course._id}`}
                   key={course._id}
-                  className="group block p-6 bg-du-gray-100 hover:bg-[rgba(204,229,255,1)] transition"
+                  className={styles.card}
                 >
                   <h3
-                    className="inline-block text-du-black mb-2 underline decoration-transparent group-hover:decoration-du-black transition-colors"
+                    className={styles.cardTitle}
                     style={{
                       fontFamily: '"Diya", var(--font-manrope), sans-serif',
                       fontWeight: 600,
@@ -254,40 +263,32 @@ export default function SharedDevelopment() {
                       lineHeight: "32px",
                       letterSpacing: "-0.56px",
                       verticalAlign: "middle",
-                      textDecorationStyle: "solid",
-                      textUnderlineOffset: "4px",
-                      textDecorationThickness: "2px",
                     }}
                   >
                     {course.title}
                   </h3>
-                  <p className="text-du-gray-700 text-sm mb-3">
+                  <p className={styles.cardDescription}>
                     {course.description.length > 200
                       ? course.description.slice(0, 200) + "..."
                       : course.description}
                   </p>
-                  <div className="text-xs text-du-gray-500 mb-4">
+                  <div className={styles.cardAuthor}>
                     {authorNames[course.authorId] || "..."}
                   </div>
-                  <div className="flex flex-wrap gap-1.5">
+                  <div className={styles.tagRow}>
                     {course.requiredRoles.map((r, idx) => (
-                      <span
-                        key={idx}
-                        className="bg-du-white text-du-gray-700 border border-du-gray-200 text-xs px-3 py-1 rounded-full font-medium"
-                      >
+                      <span key={idx} className={styles.tagOutline}>
                         {r}
                       </span>
                     ))}
-                    <span className="bg-du-black text-du-white text-xs px-3 py-1 rounded-full font-medium">
-                      {course.specialty}
-                    </span>
+                    <span className={styles.tagDark}>{course.specialty}</span>
                   </div>
                 </Link>
               ))}
             </div>
 
             {hasMore && (
-              <div className="flex justify-center mt-10">
+              <div className={styles.moreWrap}>
                 <button
                   onClick={() => setVisibleCount((v) => v + PAGE_SIZE)}
                   className="btn-pill btn-pill-outline text-sm py-2.5 px-6"

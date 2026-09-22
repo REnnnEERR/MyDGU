@@ -1,13 +1,14 @@
 "use client";
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import { ModuleBreadcrumb } from "@/components/Header";
-import { SharedDevelopmentHeader } from "@/components/SharedDevelopmentHeader";
+import { ModuleBreadcrumb } from "@/components/Header/Header";
+import { SharedDevelopmentHeader } from "@/components/SharedDevelopmentHeader/SharedDevelopmentHeader";
 import { api, useAuth } from "@/context/AuthContext";
-import { ApplicantProfileModal } from "@/components/ApplicantProfileModal";
-import { EditIcon } from "@/components/icons";
+import { ApplicantProfileModal } from "@/components/ApplicantProfileModal/ApplicantProfileModal";
+import { EditIcon } from "@/components/icons/icons";
 import { getCached, setCached } from "@/lib/listCache";
 import type { Course, CourseApplication, Profile } from "@/types/course";
+import styles from "./page.module.css";
 
 type CoDeveloperItem = {
   application: CourseApplication;
@@ -23,11 +24,6 @@ type AuthorItem = {
 type CoDeveloperGroup = {
   course: Course | null;
   applications: CourseApplication[];
-};
-
-const STATUS_LABEL: Record<Course["status"], string> = {
-  Відкрито: "Набір відкрито",
-  Закрито: "Набір закрито",
 };
 
 const CO_DEV_CACHE_KEY = "my-courses:co-developer";
@@ -47,7 +43,6 @@ export default function MyCourses() {
   const [isCoDevLoading, setIsCoDevLoading] = useState(
     coDeveloperItems.length === 0,
   );
-  const hasLoadedCoDevOnce = useRef(coDeveloperItems.length > 0);
 
   const [authorItems, setAuthorItems] = useState<AuthorItem[]>(
     () => getCached<AuthorItem[]>(AUTHOR_CACHE_KEY) || [],
@@ -55,7 +50,6 @@ export default function MyCourses() {
   const [isAuthorLoading, setIsAuthorLoading] = useState(
     authorItems.length === 0,
   );
-  const hasLoadedAuthorOnce = useRef(authorItems.length > 0);
 
   const [expandedCourseId, setExpandedCourseId] = useState<string | null>(null);
   const [expandedCoDevCourseId, setExpandedCoDevCourseId] = useState<
@@ -66,7 +60,7 @@ export default function MyCourses() {
   );
 
   const loadCoDeveloper = useCallback(async (silent = false) => {
-    if (!silent && !hasLoadedCoDevOnce.current) setIsCoDevLoading(true);
+    if (!silent) setIsCoDevLoading(true);
     try {
       const [applications, profile] = await Promise.all([
         api.get<CourseApplication[]>("/api/applications/mine"),
@@ -90,14 +84,13 @@ export default function MyCourses() {
       );
       setCoDeveloperItems(items);
       setCached(CO_DEV_CACHE_KEY, items);
-      hasLoadedCoDevOnce.current = true;
     } finally {
       setIsCoDevLoading(false);
     }
   }, []);
 
   const loadAuthor = useCallback(async (silent = false) => {
-    if (!silent && !hasLoadedAuthorOnce.current) setIsAuthorLoading(true);
+    if (!silent) setIsAuthorLoading(true);
     try {
       const courses = await api.get<Course[]>("/api/courses/mine");
       const items = await Promise.all(
@@ -131,7 +124,6 @@ export default function MyCourses() {
       );
       setAuthorItems(items);
       setCached(AUTHOR_CACHE_KEY, items);
-      hasLoadedAuthorOnce.current = true;
     } finally {
       setIsAuthorLoading(false);
     }
@@ -144,7 +136,6 @@ export default function MyCourses() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
-  // Скасувати одну заявку — прибираємо її локально, без повного перезавантаження
   async function cancelApplication(applicationId: string) {
     await api.del(`/api/applications/${applicationId}`);
     setCoDeveloperItems((prev) => {
@@ -156,7 +147,6 @@ export default function MyCourses() {
     });
   }
 
-  // Скасувати всі заявки, що очікують, по курсу — так само локально
   async function cancelAllPending(applications: CourseApplication[]) {
     if (!confirm("Скасувати заявку на цей курс?")) return;
     const idsToCancel = applications
@@ -174,7 +164,6 @@ export default function MyCourses() {
     });
   }
 
-  // Прийняти/відхилити заявку — міняємо статус лише в потрібному елементі
   async function respondToApplication(
     applicationId: string,
     status: "підтверджено" | "відхилено",
@@ -192,7 +181,6 @@ export default function MyCourses() {
     });
   }
 
-  // Завершити/відкрити набір — оновлюємо статус тільки цього курсу
   async function closeEnrollment(courseId: string) {
     await api.put<Course>(`/api/courses/${courseId}`, { status: "Закрито" });
     setAuthorItems((prev) => {
@@ -221,14 +209,14 @@ export default function MyCourses() {
 
   if (isAuthLoading) {
     return (
-      <div className="flex flex-col flex-1">
+      <div className={styles.wrapper}>
         <ModuleBreadcrumb
           items={[
             { label: "Спільна розробка курсів", href: "/shared-development" },
           ]}
         />
-        <div className="max-w-[1440px] mx-auto w-full px-20 py-10 text-du-gray-500">
-          Завантаження...
+        <div className={styles.content}>
+          <p className={styles.stateText}>Завантаження...</p>
         </div>
       </div>
     );
@@ -236,14 +224,14 @@ export default function MyCourses() {
 
   if (!user) {
     return (
-      <div className="flex flex-col flex-1">
+      <div className={styles.wrapper}>
         <ModuleBreadcrumb
           items={[
             { label: "Спільна розробка курсів", href: "/shared-development" },
           ]}
         />
-        <div className="max-w-[1440px] mx-auto w-full px-20 py-10">
-          <p className="text-du-gray-700">
+        <div className={styles.content}>
+          <p>
             Щоб побачити свої курси, спочатку{" "}
             <Link
               href="/login"
@@ -259,53 +247,43 @@ export default function MyCourses() {
   }
 
   return (
-    <div className="flex flex-col flex-1">
+    <div className={styles.wrapper}>
       <ModuleBreadcrumb
         items={[
           { label: "Спільна розробка курсів", href: "/shared-development" },
         ]}
       />
 
-      <div className="max-w-[1440px] mx-auto w-full px-20 pt-4 pb-10">
+      <div className={styles.content}>
         <SharedDevelopmentHeader active="my-courses" />
 
-        <div className="flex items-center gap-6 text-sm font-medium mb-6 border-b border-du-gray-200">
+        <div className={styles.tabsRow}>
           <button
             onClick={() => setTab("co-developer")}
-            className={`pb-3 flex items-center gap-1.5 ${
-              tab === "co-developer"
-                ? "text-du-black border-b-2 border-du-black"
-                : "text-du-gray-500 hover:text-du-black"
-            }`}
+            className={
+              tab === "co-developer" ? styles.tabButtonActive : styles.tabButton
+            }
           >
             Я співрозробник
-            <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1 rounded-full bg-du-black text-du-white text-xs">
-              {coDeveloperItems.length}
-            </span>
+            <span className={styles.badge}>{coDeveloperItems.length}</span>
           </button>
           <button
             onClick={() => setTab("author")}
-            className={`pb-3 flex items-center gap-1.5 ${
-              tab === "author"
-                ? "text-du-black border-b-2 border-du-black"
-                : "text-du-gray-500 hover:text-du-black"
-            }`}
+            className={
+              tab === "author" ? styles.tabButtonActive : styles.tabButton
+            }
           >
             Я автор
-            <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1 rounded-full bg-du-black text-du-white text-xs">
-              {authorItems.length}
-            </span>
+            <span className={styles.badge}>{authorItems.length}</span>
           </button>
         </div>
 
         {tab === "co-developer" && (
-          <div className="space-y-5">
+          <div className={styles.list}>
             {isCoDevLoading ? (
-              <p className="text-du-gray-500 py-10 text-center">
-                Завантаження...
-              </p>
+              <p className={styles.stateText}>Завантаження...</p>
             ) : coDeveloperItems.length === 0 ? (
-              <p className="text-du-gray-500 italic py-10 text-center">
+              <p className={styles.stateTextItalic}>
                 Ви ще не подавали заявок як співрозробник.
               </p>
             ) : (
@@ -313,9 +291,8 @@ export default function MyCourses() {
                 const grouped = new Map<string, CoDeveloperGroup>();
                 coDeveloperItems.forEach(({ application, course }) => {
                   const key = application.courseId;
-                  if (!grouped.has(key)) {
+                  if (!grouped.has(key))
                     grouped.set(key, { course, applications: [] });
-                  }
                   grouped.get(key)!.applications.push(application);
                 });
 
@@ -347,12 +324,11 @@ export default function MyCourses() {
                     return (
                       <div
                         key={courseId}
-                        style={{
-                          backgroundColor: "rgba(234,234,234,1)",
-                          ...(isExpanded
-                            ? { border: "2px solid rgba(234,234,234,1)" }
-                            : {}),
-                        }}
+                        className={
+                          isExpanded
+                            ? styles.groupCardExpanded
+                            : styles.groupCard
+                        }
                       >
                         <div
                           onClick={() =>
@@ -360,60 +336,56 @@ export default function MyCourses() {
                               isExpanded ? null : courseId,
                             )
                           }
-                          className="p-6 cursor-pointer"
+                          className={styles.cardHead}
                         >
                           {course ? (
                             <>
                               <Link
                                 href={`/shared-development/course/${course._id}`}
                                 onClick={(e) => e.stopPropagation()}
-                                className="text-xl font-bold text-du-black hover:underline"
+                                className={styles.courseLink}
                               >
                                 {course.title}
                               </Link>
-                              <p className="text-du-gray-700 text-sm mt-2 mb-4">
+                              <p className={styles.cardDescription}>
                                 {descriptionTruncated}
                               </p>
-                              <div className="flex flex-wrap gap-1.5">
+                              <div className={styles.tagRow}>
                                 {hasConfirmed ? (
-                                  <span
-                                    className="text-white text-xs px-3 py-1 rounded-full font-semibold"
-                                    style={{ background: "rgba(4,198,93,1)" }}
-                                  >
+                                  <span className={styles.tagGreen}>
                                     Вашу заявку прийнято
                                   </span>
                                 ) : allRejected ? (
-                                  <span
-                                    className="text-white text-xs px-3 py-1 rounded-full font-semibold"
-                                    style={{ background: "rgba(255,56,0,1)" }}
-                                  >
+                                  <span className={styles.tagRed}>
                                     Вашу заявку відхилено
                                   </span>
                                 ) : (
-                                  <span className="bg-du-yellow-deep text-du-gray-700 text-xs px-3 py-1 rounded-full font-semibold">
+                                  <span className={styles.tagYellow}>
                                     {course.status === "Закрито"
                                       ? "Набір закрито"
                                       : "Набір відкрито"}
                                   </span>
                                 )}
-                                <span className="bg-du-black text-du-white text-xs px-3 py-1 rounded-full font-semibold">
+                                <span className={styles.tagDark}>
                                   {course.specialty}
                                 </span>
                               </div>
                             </>
                           ) : (
-                            <p className="text-du-gray-500 text-sm italic">
+                            <p className={styles.stateTextItalic}>
                               Курс тимчасово недоступний.
                             </p>
                           )}
                         </div>
 
                         {isExpanded && (
-                          <div className="bg-du-white p-5">
-                            <div className="flex items-start justify-between gap-4 mb-3">
+                          <div className={styles.expandedPanel}>
+                            <div className={styles.applyBoxHeader}>
                               <div>
-                                <h4 className="font-bold mb-1">Ваша заявка</h4>
-                                <p className="text-du-gray-500 text-sm">
+                                <h4 className={styles.applyBoxTitle}>
+                                  Ваша заявка
+                                </h4>
+                                <p className={styles.applyBoxSubtitle}>
                                   Перегляньте заявку, як кандидата, яку отримає
                                   автор курсу.
                                 </p>
@@ -430,47 +402,31 @@ export default function MyCourses() {
                                 </button>
                               )}
                             </div>
-                            <div className="space-y-3">
+                            <div className={styles.roleRows}>
                               {applications.map((a) => (
-                                <div
-                                  key={a._id}
-                                  className="flex items-center gap-4 p-4"
-                                  style={{ background: "rgba(231,238,243,1)" }}
-                                >
-                                  <div className="min-w-0 flex-1">
-                                    <div className="font-semibold text-sm mb-1">
+                                <div key={a._id} className={styles.roleRow}>
+                                  <div className={styles.roleRowName}>
+                                    <div className={styles.applicantName}>
                                       {myProfile?.fullName ||
                                         "Ваш профіль не заповнений"}
                                     </div>
                                     {myAboutTruncated && (
-                                      <p className="text-du-gray-500 text-sm">
+                                      <p className={styles.applicantAbout}>
                                         {myAboutTruncated}
                                       </p>
                                     )}
                                   </div>
-
-                                  <span className="bg-du-white text-du-gray-700 text-xs px-2.5 py-1 rounded-full font-medium shrink-0">
+                                  <span className={styles.roleTag}>
                                     {a.role}
                                   </span>
-
-                                  <div className="shrink-0 min-w-[168px] flex justify-end">
+                                  <div className={styles.roleRowStatus}>
                                     {a.status === "підтверджено" && (
-                                      <span
-                                        className="text-white text-xs px-2.5 py-1 rounded-full font-semibold"
-                                        style={{
-                                          background: "rgba(4,198,93,1)",
-                                        }}
-                                      >
+                                      <span className={styles.tagGreen}>
                                         Вашу заявку прийнято
                                       </span>
                                     )}
                                     {a.status === "відхилено" && (
-                                      <span
-                                        className="text-white text-xs px-2.5 py-1 rounded-full font-semibold"
-                                        style={{
-                                          background: "rgba(255,56,0,1)",
-                                        }}
-                                      >
+                                      <span className={styles.tagRed}>
                                         Вашу заявку відхилено
                                       </span>
                                     )}
@@ -490,13 +446,11 @@ export default function MyCourses() {
         )}
 
         {tab === "author" && (
-          <div className="space-y-5">
+          <div className={styles.list}>
             {isAuthorLoading ? (
-              <p className="text-du-gray-500 py-10 text-center">
-                Завантаження...
-              </p>
+              <p className={styles.stateText}>Завантаження...</p>
             ) : authorItems.length === 0 ? (
-              <p className="text-du-gray-500 italic py-10 text-center">
+              <p className={styles.stateTextItalic}>
                 У вас поки немає створених курсів.
               </p>
             ) : (
@@ -508,33 +462,27 @@ export default function MyCourses() {
                 return (
                   <div
                     key={course._id}
-                    style={{
-                      backgroundColor: "rgba(234,234,234,1)",
-                      ...(isExpanded
-                        ? { border: "2px solid rgba(234,234,234,1)" }
-                        : {}),
-                    }}
+                    className={
+                      isExpanded ? styles.groupCardExpanded : styles.groupCard
+                    }
                   >
                     <div
                       onClick={() =>
                         setExpandedCourseId(isExpanded ? null : course._id)
                       }
-                      className="p-6 cursor-pointer"
+                      className={styles.cardHead}
                     >
-                      <div className="flex items-center justify-between gap-2 mb-2">
-                        <div className="flex items-center gap-2 min-w-0">
+                      <div className={styles.cardHeadRow}>
+                        <div className={styles.cardHeadRowLeft}>
                           {pending.length > 0 && (
-                            <span
-                              className="inline-flex items-center justify-center min-w-[22px] h-[22px] px-1 rounded-full text-white text-xs font-bold shrink-0"
-                              style={{ background: "rgba(255,56,0,1)" }}
-                            >
+                            <span className={styles.pendingCircle}>
                               {pending.length}
                             </span>
                           )}
                           <Link
                             href={`/shared-development/course/${course._id}`}
                             onClick={(e) => e.stopPropagation()}
-                            className="text-xl font-bold text-du-black hover:underline"
+                            className={styles.courseLink}
                           >
                             {course.title}
                           </Link>
@@ -542,37 +490,32 @@ export default function MyCourses() {
                         <Link
                           href={`/shared-development/course/${course._id}?edit=1`}
                           onClick={(e) => e.stopPropagation()}
-                          className="text-du-gray-500 hover:text-du-black shrink-0"
+                          className={styles.editLink}
                         >
                           <EditIcon className="w-4 h-4" />
                         </Link>
                       </div>
-                      <p className="text-du-gray-700 text-sm mb-4">
+                      <p className={styles.cardDescription}>
                         {course.description}
                       </p>
-                      <div className="flex flex-wrap gap-1.5">
+                      <div className={styles.tagRow}>
                         {course.status === "Відкрито" ? (
-                          <span className="bg-du-yellow-deep text-du-gray-700 text-xs px-3 py-1 rounded-full font-semibold">
-                            {STATUS_LABEL[course.status]}
+                          <span className={styles.tagYellow}>
+                            Набір відкрито
                           </span>
                         ) : (
-                          <span
-                            className="text-white text-xs px-3 py-1 rounded-full font-semibold"
-                            style={{ background: "rgba(255,56,0,1)" }}
-                          >
-                            {STATUS_LABEL[course.status]}
-                          </span>
+                          <span className={styles.tagRed}>Набір закрито</span>
                         )}
-                        <span className="bg-du-black text-du-white text-xs px-3 py-1 rounded-full font-semibold">
+                        <span className={styles.tagDark}>
                           {course.specialty}
                         </span>
                       </div>
                     </div>
 
                     {isExpanded && (
-                      <div className="bg-du-white p-6">
-                        <div className="flex items-center justify-between gap-4 mb-2">
-                          <h4 className="font-bold text-lg">
+                      <div className={styles.expandedPanelLg}>
+                        <div className={styles.authorPanelHeader}>
+                          <h4 className={styles.authorPanelTitle}>
                             Заявки від співробітників
                           </h4>
                           {course.status === "Відкрито" ? (
@@ -591,17 +534,17 @@ export default function MyCourses() {
                             </button>
                           )}
                         </div>
-                        <p className="text-du-gray-500 text-sm mb-4">
+                        <p className={styles.authorPanelHint}>
                           Перегляньте профілі кандидатів і прийміть тих, кого
                           хочете додати до курсу.
                         </p>
 
                         {pending.length === 0 ? (
-                          <p className="text-du-gray-500 text-sm italic">
+                          <p className={styles.stateTextItalic}>
                             Заявок на розгляді немає.
                           </p>
                         ) : (
-                          <div className="space-y-3">
+                          <div className={styles.applicantRows}>
                             {pending.map((application) => {
                               const profile =
                                 applicantProfiles[application.applicantId];
@@ -614,8 +557,7 @@ export default function MyCourses() {
                               return (
                                 <div
                                   key={application._id}
-                                  className="flex items-center justify-between gap-4 p-4"
-                                  style={{ background: "rgba(231,238,243,1)" }}
+                                  className={styles.applicantRow}
                                 >
                                   <button
                                     onClick={() =>
@@ -623,25 +565,25 @@ export default function MyCourses() {
                                         application.applicantId,
                                       )
                                     }
-                                    className="min-w-0 text-left"
+                                    className={styles.applicantInfoButton}
                                   >
-                                    <div className="font-semibold text-sm mb-1 hover:underline">
+                                    <div className={styles.applicantName}>
                                       {profile?.fullName || "Кандидат"}
                                     </div>
                                     {truncatedAbout && (
-                                      <p className="text-du-gray-500 text-sm hover:underline">
+                                      <p className={styles.applicantAbout}>
                                         {truncatedAbout}
                                       </p>
                                     )}
                                   </button>
 
                                   {application.role && (
-                                    <span className="bg-du-white text-du-gray-700 text-xs px-2.5 py-1 rounded-full font-medium shrink-0">
+                                    <span className={styles.roleTag}>
                                       {application.role}
                                     </span>
                                   )}
 
-                                  <div className="flex gap-2 shrink-0">
+                                  <div className={styles.applicantActions}>
                                     <button
                                       onClick={() =>
                                         respondToApplication(
@@ -649,8 +591,7 @@ export default function MyCourses() {
                                           "підтверджено",
                                         )
                                       }
-                                      className="text-white text-xs font-semibold py-1.5 px-4 rounded-full"
-                                      style={{ background: "rgba(4,198,93,1)" }}
+                                      className={styles.confirmButton}
                                     >
                                       Підтвердити
                                     </button>
@@ -661,8 +602,7 @@ export default function MyCourses() {
                                           "відхилено",
                                         )
                                       }
-                                      className="text-white text-xs font-semibold py-1.5 px-4 rounded-full"
-                                      style={{ background: "rgba(255,56,0,1)" }}
+                                      className={styles.rejectButton}
                                     >
                                       Відхилити
                                     </button>

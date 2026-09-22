@@ -1,0 +1,94 @@
+.title {
+  margin-bottom: 24px;
+  font-family: "Diya", var(--font-manrope), sans-serif;
+  font-weight: 600;
+  font-size: 56px;
+  line-height: 60px;
+  letter-spacing: -1.12px;
+}
+
+.bannerFullBleed {
+  position: relative;
+  left: 50%;
+  width: 100vw;
+  transform: translateX(-50%);
+  background: var(--du-banner-bg);
+  margin-bottom: 32px;
+}
+
+.bannerInner {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 80px;
+  height: 208px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 28px;
+}
+
+.subtitle {
+  max-width: 820px;
+  color: var(--du-banner-text);
+  font-family: "Diya", var(--font-manrope), sans-serif;
+  font-weight: 400;
+  font-size: 16px;
+  line-height: 24px;
+  letter-spacing: -0.32px;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.tabs {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.tab {
+  padding-bottom: 4px;
+  color: var(--du-gray-500);
+}
+
+.tab:hover {
+  color: var(--du-black);
+}
+
+.tabActive {
+  padding-bottom: 4px;
+  color: var(--du-black);
+  border-bottom: 2px solid var(--du-black);
+}
+
+.tabWithBadge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 4px;
+  border-radius: 9999px;
+  background: var(--du-black);
+  color: var(--du-white);
+  font-size: 12px;
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}

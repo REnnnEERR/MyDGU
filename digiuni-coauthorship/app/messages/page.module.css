@@ -1,0 +1,90 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.content {
+  max-width: 1440px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 16px 80px 40px;
+}
+
+.stateText {
+  color: var(--du-gray-500);
+  padding: 40px 0;
+  text-align: center;
+}
+
+.stateTextItalic {
+  composes: stateText;
+  font-style: italic;
+}
+
+.list {
+  max-width: 672px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.card {
+  width: 100%;
+  text-align: left;
+  padding: 20px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  background: var(--du-gray-100);
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.card:hover {
+  background: rgba(204, 229, 255, 1);
+}
+
+.cardInfo {
+  min-width: 0;
+}
+
+.cardCourse {
+  font-size: 14px;
+  color: var(--du-gray-500);
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cardName {
+  font-weight: 700;
+  font-size: 18px;
+  margin-bottom: 4px;
+}
+
+.cardPreview {
+  color: var(--du-gray-700);
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.unreadBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 4px;
+  border-radius: 9999px;
+  background: var(--du-black);
+  color: var(--du-white);
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}

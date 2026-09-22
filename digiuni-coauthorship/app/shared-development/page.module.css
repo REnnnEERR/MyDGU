@@ -1,0 +1,216 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.content {
+  max-width: 1440px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 16px 80px 40px;
+}
+
+.filterRow {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 32px;
+}
+
+.searchWrap {
+  position: relative;
+  flex: 1;
+}
+
+.searchInner {
+  position: relative;
+  border-radius: 9999px;
+  background: var(--du-white);
+}
+
+.searchInput {
+  width: 100%;
+  height: 48px;
+  border-radius: 9999px;
+  background: transparent;
+  padding: 0 44px 0 20px;
+  font-size: 14px;
+}
+
+.searchInput:focus {
+  outline: none;
+}
+
+.searchInput::placeholder {
+  color: var(--du-gray-500);
+}
+
+.searchIcon {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--du-gray-500);
+}
+
+.filterSelect {
+  position: relative;
+  flex-shrink: 0;
+  width: 252px;
+  border-radius: 9999px;
+  padding: 2px;
+}
+
+.filterSelectInner {
+  position: relative;
+  border-radius: 9999px;
+  background: var(--du-white);
+}
+
+.filterTrigger {
+  width: 100%;
+  height: 44px;
+  border-radius: 9999px;
+  background: transparent;
+  padding: 0 36px 0 20px;
+  font-size: 14px;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.filterChevron {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--du-gray-500);
+  pointer-events: none;
+}
+
+.filterDropdown {
+  position: absolute;
+  z-index: 20;
+  margin-top: 8px;
+  width: 100%;
+  max-height: 256px;
+  overflow-y: auto;
+  background: var(--du-white);
+  border: 1px solid var(--du-gray-200);
+  border-radius: 16px;
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+  padding: 8px;
+}
+
+.filterOption {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font-size: 14px;
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.filterOption:hover {
+  background: var(--du-gray-50);
+}
+
+.filterOptionMuted {
+  composes: filterOption;
+  color: var(--du-gray-500);
+}
+
+.stateText {
+  color: var(--du-gray-500);
+  padding: 40px 0;
+  text-align: center;
+}
+
+.stateTextItalic {
+  composes: stateText;
+  font-style: italic;
+}
+
+.grid {
+  display: grid;
+  gap: 24px;
+}
+
+@media (min-width: 768px) {
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.card {
+  display: block;
+  padding: 24px;
+  background: var(--du-gray-100);
+  transition: background-color 0.15s ease;
+}
+
+.card:hover {
+  background: rgba(204, 229, 255, 1);
+}
+
+.cardTitle {
+  display: inline-block;
+  color: var(--du-black);
+  margin-bottom: 8px;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-decoration-style: solid;
+  text-underline-offset: 4px;
+  text-decoration-thickness: 2px;
+  transition: text-decoration-color 0.15s ease;
+}
+
+.card:hover .cardTitle {
+  text-decoration-color: var(--du-black);
+}
+
+.cardDescription {
+  color: var(--du-gray-700);
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.cardAuthor {
+  font-size: 12px;
+  color: var(--du-gray-500);
+  margin-bottom: 16px;
+}
+
+.tagRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tagOutline {
+  background: var(--du-white);
+  color: var(--du-gray-700);
+  border: 1px solid var(--du-gray-200);
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-weight: 500;
+}
+
+.tagDark {
+  background: var(--du-black);
+  color: var(--du-white);
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-weight: 500;
+}
+
+.moreWrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 40px;
+}

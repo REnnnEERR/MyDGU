@@ -1,5 +1,6 @@
 "use client";
 import { useRef, useEffect } from "react";
+import styles from "./AutoResizeTextarea.module.css";
 
 export function AutoResizeTextarea({
   value,
@@ -28,7 +29,7 @@ export function AutoResizeTextarea({
       onChange={(e) => onChange(e.target.value)}
       placeholder={placeholder}
       rows={1}
-      className={`resize-none overflow-hidden bg-transparent border-b border-du-gray-500 pb-2 text-sm focus:outline-none placeholder:text-du-gray-500 ${className}`}
+      className={`${styles.textarea} ${className}`}
     />
   );
 }

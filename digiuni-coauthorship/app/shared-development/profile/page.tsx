@@ -3,12 +3,17 @@ import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { roles } from "@/data/roles";
 import { specialties } from "@/data/specialties";
-import { ModuleBreadcrumb } from "@/components/Header";
-import { SharedDevelopmentHeader } from "@/components/SharedDevelopmentHeader";
+import { ModuleBreadcrumb } from "@/components/Header/Header";
+import { SharedDevelopmentHeader } from "@/components/SharedDevelopmentHeader/SharedDevelopmentHeader";
+import {
+  SearchIcon,
+  ChevronDownIcon,
+  ChevronUpIcon,
+} from "@/components/icons/icons";
+import { AutoResizeTextarea } from "@/components/AutoResizeTextarea/AutoResizeTextarea";
 import { api, useAuth, ApiError } from "@/context/AuthContext";
 import type { Profile } from "@/types/course";
-import { SearchIcon, ChevronDownIcon, ChevronUpIcon } from "@/components/icons";
-import { AutoResizeTextarea } from "@/components/AutoResizeTextarea";
+import styles from "./page.module.css";
 
 export default function ProfilePage() {
   const { user, isLoading: isAuthLoading } = useAuth();
@@ -99,15 +104,15 @@ export default function ProfilePage() {
 
   if (isAuthLoading || isLoadingProfile) {
     return (
-      <div className="flex flex-col flex-1">
+      <div className={styles.wrapper}>
         <ModuleBreadcrumb
           items={[
             { label: "Спільна розробка курсів", href: "/shared-development" },
             { label: "Мій профіль співрозробника" },
           ]}
         />
-        <div className="max-w-[1440px] mx-auto w-full px-20 py-10 text-du-gray-500">
-          Завантаження...
+        <div className={styles.content}>
+          <p className={styles.stateText}>Завантаження...</p>
         </div>
       </div>
     );
@@ -115,15 +120,15 @@ export default function ProfilePage() {
 
   if (!user) {
     return (
-      <div className="flex flex-col flex-1">
+      <div className={styles.wrapper}>
         <ModuleBreadcrumb
           items={[
             { label: "Спільна розробка курсів", href: "/shared-development" },
             { label: "Мій профіль співрозробника" },
           ]}
         />
-        <div className="max-w-[1440px] mx-auto w-full px-20 py-10">
-          <p className="text-du-gray-700">
+        <div className={styles.content}>
+          <p>
             Щоб заповнити анкету, спочатку{" "}
             <Link
               href="/login"
@@ -139,7 +144,7 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="flex flex-col flex-1">
+    <div className={styles.wrapper}>
       <ModuleBreadcrumb
         items={[
           { label: "Спільна розробка курсів", href: "/shared-development" },
@@ -147,33 +152,23 @@ export default function ProfilePage() {
         ]}
       />
 
-      <div className="max-w-[1440px] mx-auto w-full px-20 pt-4 pb-10">
+      <div className={styles.content}>
         <SharedDevelopmentHeader active="none" />
 
-        <div className="max-w-2xl">
-          <h1 className="inline-block text-2xl font-bold border-b-2 border-du-blue pb-1.5 mb-8">
-            Мій профіль співрозробника
-          </h1>
+        <div className={styles.formWrap}>
+          <h1 className={styles.heading}>Мій профіль співрозробника</h1>
 
-          {error && (
-            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded-xl p-2.5 mb-5">
-              {error}
-            </p>
-          )}
-          {saved && (
-            <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 mb-5">
-              Профіль збережено.
-            </p>
-          )}
+          {error && <p className={styles.errorBox}>{error}</p>}
+          {saved && <p className={styles.successBox}>Профіль збережено.</p>}
 
-          <div className="space-y-7">
+          <div className={styles.fieldGroup}>
             <div>
               <input
                 type="text"
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
                 placeholder="Ім'я та прізвище"
-                className="w-full bg-transparent border-b border-du-gray-500 pb-2 text-sm focus:outline-none focus:border-du-black placeholder:text-du-gray-500"
+                className={styles.underlineInput}
               />
             </div>
 
@@ -182,27 +177,28 @@ export default function ProfilePage() {
                 value={about}
                 onChange={setAbout}
                 placeholder="Коротко про себе та свій досвід"
-                className="w-full"
               />
             </div>
 
-            <div className="relative" ref={specialtyPickerRef}>
+            <div className={styles.comboWrap} ref={specialtyPickerRef}>
               <button
                 type="button"
                 onClick={() => setShowSpecialtyPicker((v) => !v)}
-                className="w-full flex items-center gap-2 border-b border-du-gray-500 pb-2 text-sm text-left"
+                className={styles.comboTrigger}
               >
-                <SearchIcon className="w-4 h-4 text-du-gray-500" />
+                <SearchIcon className="w-4 h-4" />
                 <span
-                  className={
-                    mySpecialties.length ? "text-du-black" : "text-du-gray-500"
-                  }
+                  style={{
+                    color: mySpecialties.length
+                      ? "var(--du-black)"
+                      : "var(--du-gray-500)",
+                  }}
                 >
                   {mySpecialties.length
                     ? `Обрано: ${mySpecialties.length}`
                     : "Мої спеціальності"}
                 </span>
-                <span className="ml-auto text-du-gray-500">
+                <span className={styles.comboChevron}>
                   {showSpecialtyPicker ? (
                     <ChevronUpIcon className="w-4 h-4" />
                   ) : (
@@ -212,14 +208,11 @@ export default function ProfilePage() {
               </button>
 
               {showSpecialtyPicker && (
-                <div className="absolute z-20 mt-2 w-full max-h-64 overflow-y-auto bg-du-white border border-du-gray-200 rounded-2xl shadow-lg p-2">
+                <div className={styles.comboDropdown}>
                   {specialties.map((s) => {
                     const value = `${s.code} ${s.name}`;
                     return (
-                      <label
-                        key={s.code}
-                        className="flex items-center gap-2 text-sm p-2 hover:bg-du-gray-50 rounded-lg cursor-pointer"
-                      >
+                      <label key={s.code} className={styles.checkboxOption}>
                         <input
                           type="checkbox"
                           className="checkbox-round"
@@ -234,12 +227,9 @@ export default function ProfilePage() {
               )}
 
               {mySpecialties.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mt-3">
+                <div className={styles.selectedTags}>
                   {mySpecialties.map((s, i) => (
-                    <span
-                      key={i}
-                      className="bg-du-gray-100 text-du-gray-700 text-xs px-3 py-1 rounded-full font-medium"
-                    >
+                    <span key={i} className={styles.selectedTag}>
                       {s}
                     </span>
                   ))}
@@ -248,10 +238,8 @@ export default function ProfilePage() {
             </div>
 
             <div>
-              <p className="text-sm text-du-gray-500 mb-3">
-                Ролі, у яких можу допомогти
-              </p>
-              <div className="flex flex-wrap gap-2">
+              <p className={styles.rolesLabel}>Ролі, у яких можу допомогти</p>
+              <div className={styles.rolesGrid}>
                 {roles.map((r) => {
                   const selected = myRoles.includes(r);
                   return (
@@ -259,7 +247,7 @@ export default function ProfilePage() {
                       type="button"
                       key={r}
                       onClick={() => handleRoleChange(r)}
-                      className="text-sm px-4 py-2 rounded-full font-medium transition"
+                      className={styles.roleChip}
                       style={
                         selected
                           ? { background: "rgba(91,90,255,1)", color: "#fff" }

@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api, useAuth } from "@/context/AuthContext";
 import type { Course, CourseApplication } from "@/types/course";
+import styles from "./SharedDevelopmentHeader.module.css";
 
 const DEFAULT_SUBTITLE =
   "Знаходьте фахівців для своїх курсів або долучайтеся до курсів інших авторів у ролі співрозробника.";
@@ -54,85 +55,45 @@ export function SharedDevelopmentHeader({
 
   return (
     <>
-      <h1
-        className="mb-6"
-        style={{
-          fontFamily: '"Diya", var(--font-manrope), sans-serif',
-          fontWeight: 600,
-          fontSize: "56px",
-          lineHeight: "60px",
-          letterSpacing: "-1.12px",
-        }}
-      >
-        Спільна розробка курсів
-      </h1>
+      <h1 className={styles.title}>Спільна розробка курсів</h1>
 
-      <div className="relative left-1/2 w-screen -translate-x-1/2 bg-du-banner-bg mb-8">
-        <div className="max-w-[1440px] mx-auto px-20 h-[208px] flex flex-col justify-center gap-7">
-          <p
-            className="text-du-banner-text max-w-[820px]"
-            style={{
-              fontFamily: '"Diya", var(--font-manrope), sans-serif',
-              fontWeight: 400,
-              fontSize: "16px",
-              lineHeight: "24px",
-              letterSpacing: "-0.32px",
-            }}
-          >
-            {subtitle}
-          </p>
+      <div className={styles.bannerFullBleed}>
+        <div className={styles.bannerInner}>
+          <p className={styles.subtitle}>{subtitle}</p>
 
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="flex items-center gap-5 text-sm font-medium">
+          <div className={styles.row}>
+            <div className={styles.tabs}>
               <Link
                 href="/shared-development"
-                className={
-                  active === "catalog"
-                    ? "text-du-black border-b-2 border-du-black pb-1"
-                    : "text-du-gray-500 hover:text-du-black pb-1"
-                }
+                className={active === "catalog" ? styles.tabActive : styles.tab}
               >
                 Каталог курсів
               </Link>
               {user && (
                 <Link
                   href="/shared-development/my-courses"
-                  className={
-                    (active === "my-courses"
-                      ? "text-du-black border-b-2 border-du-black"
-                      : "text-du-gray-500 hover:text-du-black") +
-                    " pb-1 flex items-center gap-1.5"
-                  }
+                  className={`${active === "my-courses" ? styles.tabActive : styles.tab} ${styles.tabWithBadge}`}
                 >
                   Мої курси
                   {myCoursesCount !== null && (
-                    <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1 rounded-full bg-du-black text-du-white text-xs">
-                      {myCoursesCount}
-                    </span>
+                    <span className={styles.badge}>{myCoursesCount}</span>
                   )}
                 </Link>
               )}
               {user && (
                 <Link
                   href="/messages"
-                  className={
-                    (active === "messages"
-                      ? "text-du-black border-b-2 border-du-black"
-                      : "text-du-gray-500 hover:text-du-black") +
-                    " pb-1 flex items-center gap-1.5"
-                  }
+                  className={`${active === "messages" ? styles.tabActive : styles.tab} ${styles.tabWithBadge}`}
                 >
                   Повідомлення
                   {unreadCount > 0 && (
-                    <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1 rounded-full bg-du-black text-du-white text-xs">
-                      {unreadCount}
-                    </span>
+                    <span className={styles.badge}>{unreadCount}</span>
                   )}
                 </Link>
               )}
             </div>
 
-            <div className="flex flex-wrap gap-3">
+            <div className={styles.buttons}>
               {user && (
                 <Link
                   href="/shared-development/profile"

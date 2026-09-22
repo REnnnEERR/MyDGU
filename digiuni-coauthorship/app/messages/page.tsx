@@ -1,11 +1,12 @@
 "use client";
 import { useState, useEffect, useCallback, useRef } from "react";
-import { ModuleBreadcrumb } from "@/components/Header";
-import { SharedDevelopmentHeader } from "@/components/SharedDevelopmentHeader";
+import { ModuleBreadcrumb } from "@/components/Header/Header";
+import { SharedDevelopmentHeader } from "@/components/SharedDevelopmentHeader/SharedDevelopmentHeader";
 import { api, useAuth } from "@/context/AuthContext";
-import { MessageModal } from "@/components/MessageModal";
+import { MessageModal } from "@/components/MessageModal/MessageModal";
 import { getCached, setCached } from "@/lib/listCache";
 import type { Course, Profile } from "@/types/course";
+import styles from "./page.module.css";
 
 const CACHE_KEY = "messages:conversations";
 
@@ -79,14 +80,14 @@ export default function MessagesPage() {
 
   if (isAuthLoading) {
     return (
-      <div className="flex flex-col flex-1">
+      <div className={styles.wrapper}>
         <ModuleBreadcrumb
           items={[
             { label: "Спільна розробка курсів", href: "/shared-development" },
           ]}
         />
-        <div className="max-w-[1440px] mx-auto w-full px-20 py-10 text-du-gray-500">
-          Завантаження...
+        <div className={styles.content}>
+          <p className={styles.stateText}>Завантаження...</p>
         </div>
       </div>
     );
@@ -94,44 +95,44 @@ export default function MessagesPage() {
 
   if (!user) {
     return (
-      <div className="flex flex-col flex-1">
+      <div className={styles.wrapper}>
         <ModuleBreadcrumb
           items={[
             { label: "Спільна розробка курсів", href: "/shared-development" },
           ]}
         />
-        <div className="max-w-[1440px] mx-auto w-full px-20 py-10 text-du-gray-500">
-          Щоб побачити повідомлення, увійдіть в акаунт.
+        <div className={styles.content}>
+          <p className={styles.stateText}>
+            Щоб побачити повідомлення, увійдіть в акаунт.
+          </p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col flex-1">
+    <div className={styles.wrapper}>
       <ModuleBreadcrumb
         items={[
           { label: "Спільна розробка курсів", href: "/shared-development" },
         ]}
       />
 
-      <div className="max-w-[1440px] mx-auto w-full px-20 pt-4 pb-10">
+      <div className={styles.content}>
         <SharedDevelopmentHeader active="messages" />
 
         {isLoading ? (
-          <p className="text-du-gray-500 py-10 text-center">Завантаження...</p>
+          <p className={styles.stateText}>Завантаження...</p>
         ) : conversations.length === 0 ? (
-          <p className="text-du-gray-500 italic py-10 text-center">
+          <p className={styles.stateTextItalic}>
             У вас поки немає жодної розмови.
           </p>
         ) : (
-          <div className="max-w-2xl space-y-3">
+          <div className={styles.list}>
             {conversations.map((c) => (
               <button
                 key={`${c.courseId}_${c.otherUserId}`}
                 onClick={() => {
-                  // Одразу прибираємо позначку непрочитаного локально —
-                  // фактичне прочитання бекенд зафіксує при відкритті модалки
                   setConversations((prev) =>
                     prev.map((item) =>
                       item.courseId === c.courseId &&
@@ -142,23 +143,15 @@ export default function MessagesPage() {
                   );
                   setOpenConversation(c);
                 }}
-                className="group w-full text-left p-5 flex items-start justify-between gap-4 bg-du-gray-100 hover:bg-[rgba(204,229,255,1)] transition"
+                className={styles.card}
               >
-                <div className="min-w-0">
-                  <div className="text-sm text-du-gray-500 mb-1 truncate">
-                    {c.courseTitle}
-                  </div>
-                  <div className="font-bold text-lg mb-1">
-                    {c.otherUserName}
-                  </div>
-                  <p className="text-du-gray-700 text-sm truncate">
-                    {c.lastMessage.text}
-                  </p>
+                <div className={styles.cardInfo}>
+                  <div className={styles.cardCourse}>{c.courseTitle}</div>
+                  <div className={styles.cardName}>{c.otherUserName}</div>
+                  <p className={styles.cardPreview}>{c.lastMessage.text}</p>
                 </div>
                 {c.unreadCount > 0 && (
-                  <span className="inline-flex items-center justify-center min-w-[22px] h-[22px] px-1 rounded-full bg-du-black text-du-white text-xs font-bold shrink-0">
-                    {c.unreadCount}
-                  </span>
+                  <span className={styles.unreadBadge}>{c.unreadCount}</span>
                 )}
               </button>
             ))}
@@ -174,7 +167,6 @@ export default function MessagesPage() {
           courseTitle={openConversation.courseTitle}
           onClose={() => {
             setOpenConversation(null);
-            // тихе оновлення у фоні — без лоадера, без зникнення списку
             load(true);
           }}
         />

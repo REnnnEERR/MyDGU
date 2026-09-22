@@ -1,0 +1,335 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.content {
+  max-width: 1440px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 16px 80px 40px;
+}
+
+.tabsRow {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 24px;
+  border-bottom: 1px solid var(--du-gray-200);
+}
+
+.tabButton {
+  padding-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--du-gray-500);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.tabButton:hover {
+  color: var(--du-black);
+}
+
+.tabButtonActive {
+  composes: tabButton;
+  color: var(--du-black);
+  border-bottom: 2px solid var(--du-black);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 4px;
+  border-radius: 9999px;
+  background: var(--du-black);
+  color: var(--du-white);
+  font-size: 12px;
+}
+
+.stateText {
+  color: var(--du-gray-500);
+  padding: 40px 0;
+  text-align: center;
+}
+
+.stateTextItalic {
+  composes: stateText;
+  font-style: italic;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.groupCard {
+  background: rgba(234, 234, 234, 1);
+}
+
+.groupCardExpanded {
+  composes: groupCard;
+  border: 2px solid rgba(234, 234, 234, 1);
+}
+
+.cardHead {
+  padding: 24px;
+  cursor: pointer;
+}
+
+.cardHeadRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.cardHeadRowLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.pendingCircle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 4px;
+  border-radius: 9999px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  background: rgba(255, 56, 0, 1);
+  flex-shrink: 0;
+}
+
+.courseLink {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--du-black);
+}
+
+.courseLink:hover {
+  text-decoration: underline;
+}
+
+.editLink {
+  color: var(--du-gray-500);
+  flex-shrink: 0;
+}
+
+.editLink:hover {
+  color: var(--du-black);
+}
+
+.cardDescription {
+  color: var(--du-gray-700);
+  font-size: 14px;
+  margin: 8px 0 16px;
+}
+
+.tagRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tagYellow {
+  background: var(--du-yellow-deep);
+  color: var(--du-gray-700);
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-weight: 600;
+}
+
+.tagRed {
+  background: rgba(255, 56, 0, 1);
+  color: #fff;
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-weight: 600;
+}
+
+.tagGreen {
+  background: rgba(4, 198, 93, 1);
+  color: #fff;
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-weight: 600;
+}
+
+.tagDark {
+  background: var(--du-black);
+  color: var(--du-white);
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-weight: 600;
+}
+
+.expandedPanel {
+  background: var(--du-white);
+  padding: 20px;
+}
+
+.expandedPanelLg {
+  composes: expandedPanel;
+  padding: 24px;
+}
+
+.applyBoxHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.applyBoxTitle {
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.applyBoxSubtitle {
+  color: var(--du-gray-500);
+  font-size: 14px;
+}
+
+.roleRows {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.roleRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  background: rgba(231, 238, 243, 1);
+}
+
+.roleRowName {
+  min-width: 0;
+  flex: 1;
+  font-size: 14px;
+}
+
+.roleRowStatus {
+  flex-shrink: 0;
+  min-width: 168px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.authorPanelHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 8px;
+}
+
+.authorPanelTitle {
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.authorPanelHint {
+  color: var(--du-gray-500);
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.applicantRows {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.applicantRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+  background: rgba(231, 238, 243, 1);
+}
+
+.applicantInfoButton {
+  min-width: 0;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.applicantName {
+  font-weight: 600;
+  font-size: 14px;
+  margin-bottom: 4px;
+}
+
+.applicantInfoButton:hover .applicantName,
+.applicantInfoButton:hover .applicantAbout {
+  text-decoration: underline;
+}
+
+.applicantAbout {
+  color: var(--du-gray-500);
+  font-size: 14px;
+}
+
+.roleTag {
+  background: var(--du-white);
+  color: var(--du-gray-700);
+  font-size: 12px;
+  padding: 4px 10px;
+  border-radius: 9999px;
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.applicantActions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.confirmButton {
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 16px;
+  border-radius: 9999px;
+  background: rgba(4, 198, 93, 1);
+  border: none;
+  cursor: pointer;
+}
+
+.rejectButton {
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 6px 16px;
+  border-radius: 9999px;
+  background: rgba(255, 56, 0, 1);
+  border: none;
+  cursor: pointer;
+}

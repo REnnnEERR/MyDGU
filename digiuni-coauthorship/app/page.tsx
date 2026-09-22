@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { DiamondPattern } from "@/components/DiamondPattern";
+import { DiamondPattern } from "@/components/DiamondPattern/DiamondPattern";
 
 const MODULE_CARDS = [
   {

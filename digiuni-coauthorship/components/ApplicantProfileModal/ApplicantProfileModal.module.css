@@ -1,0 +1,76 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.modal {
+  background: var(--du-white);
+  border-radius: 20px;
+  padding: 28px;
+  max-width: 448px;
+  width: 100%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.loadingText,
+.emptyText {
+  color: var(--du-gray-500);
+  font-size: 14px;
+}
+
+.fullName {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 12px;
+}
+
+.about {
+  color: var(--du-gray-700);
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+.section {
+  margin-bottom: 16px;
+}
+
+.sectionLabel {
+  font-size: 12px;
+  color: var(--du-gray-500);
+  margin-bottom: 6px;
+}
+
+.tagRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tagDark {
+  background: var(--du-black);
+  color: var(--du-white);
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-weight: 500;
+}
+
+.tagLight {
+  background: var(--du-gray-100);
+  color: var(--du-gray-700);
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-weight: 500;
+}
+
+.closeButton {
+  margin-top: 24px;
+}

@@ -1,4 +1,5 @@
-import { LogoMark } from "./Logo";
+import { LogoMark } from "../Logo/Logo";
+import styles from "./Footer.module.css";
 
 const COLUMN_1 = [
   { label: "Курси", href: "#" },
@@ -19,13 +20,10 @@ const COLUMN_3 = [
 
 function FooterColumn({ links }: { links: { label: string; href: string }[] }) {
   return (
-    <ul className="space-y-3">
+    <ul className={styles.columnList}>
       {links.map((link) => (
         <li key={link.label}>
-          <a
-            href={link.href}
-            className="text-sm font-medium text-du-white/90 hover:text-du-white"
-          >
+          <a href={link.href} className={styles.columnLink}>
             {link.label}
           </a>
         </li>
@@ -36,17 +34,17 @@ function FooterColumn({ links }: { links: { label: string; href: string }[] }) {
 
 export function Footer() {
   return (
-    <footer className="bg-du-black text-du-white mt-auto">
-      <div className="max-w-[1440px] mx-auto px-20 py-12">
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-8 mb-10">
+    <footer className={styles.footer}>
+      <div className={styles.container}>
+        <div className={styles.columns}>
           <FooterColumn links={COLUMN_1} />
           <FooterColumn links={COLUMN_2} />
           <FooterColumn links={COLUMN_3} />
         </div>
 
-        <div className="flex items-start gap-4 border-t border-white/10 pt-8">
+        <div className={styles.bottom}>
           <LogoMark inverted />
-          <div className="text-xs text-du-white/60 leading-relaxed max-w-2xl">
+          <div className={styles.bottomText}>
             <p>За фінансової підтримки Європейського Союзу.</p>
             <p>
               Висловлені погляди та думки є лише думками авторів і не
@@ -54,7 +52,9 @@ export function Footer() {
               Європейський Союз та орган, що надав грант, не несуть
               відповідальності за них.
             </p>
-            <p className="mt-2">©2025 DigiUni. Всі права захищені.</p>
+            <p className={styles.bottomTextSpacer}>
+              ©2025 DigiUni. Всі права захищені.
+            </p>
           </div>
         </div>
       </div>

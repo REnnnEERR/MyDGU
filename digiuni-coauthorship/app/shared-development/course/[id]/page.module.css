@@ -1,0 +1,421 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+
+.content {
+  max-width: 1440px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 16px 80px 40px;
+}
+
+.stateText {
+  color: var(--du-gray-500);
+  padding: 40px 0;
+}
+
+.topActions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.errorBox {
+  font-size: 14px;
+  color: #dc2626;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 12px;
+  padding: 10px;
+  margin-bottom: 20px;
+}
+
+/* --- Режим редагування --- */
+.editForm {
+  max-width: 672px;
+}
+
+.editHeading {
+  display: inline-block;
+  font-size: 24px;
+  font-weight: 700;
+  border-bottom: 2px solid var(--du-blue);
+  padding-bottom: 6px;
+  margin-bottom: 32px;
+}
+
+.fieldGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 28px;
+}
+
+.underlineInput {
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--du-gray-500);
+  padding-bottom: 8px;
+  font-size: 14px;
+}
+
+.underlineInput:focus {
+  outline: none;
+  border-bottom-color: var(--du-black);
+}
+
+.underlineInput::placeholder {
+  color: var(--du-gray-500);
+}
+
+.comboWrap {
+  position: relative;
+}
+
+.comboTrigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-bottom: 1px solid var(--du-gray-500);
+  padding-bottom: 8px;
+  font-size: 14px;
+  text-align: left;
+  background: none;
+  border-left: none;
+  border-right: none;
+  border-top: none;
+  cursor: pointer;
+}
+
+.comboChevron {
+  margin-left: auto;
+  color: var(--du-gray-500);
+}
+
+.comboDropdown {
+  position: absolute;
+  z-index: 20;
+  margin-top: 8px;
+  width: 100%;
+  max-height: 256px;
+  overflow-y: auto;
+  background: var(--du-white);
+  border: 1px solid var(--du-gray-200);
+}
+
+.comboOption {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+  padding: 12px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--du-gray-100);
+}
+
+.comboOption:last-child {
+  border-bottom: none;
+}
+
+.comboOption:hover {
+  background: var(--du-gray-50);
+}
+
+.rolesLabel {
+  font-size: 14px;
+  color: var(--du-gray-500);
+  margin-bottom: 12px;
+}
+
+.rolesGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.roleChip {
+  font-size: 14px;
+  padding: 8px 16px;
+  border-radius: 9999px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.editActions {
+  display: flex;
+  gap: 12px;
+}
+
+/* --- Режим перегляду --- */
+.viewGrid {
+  display: grid;
+  gap: 32px;
+  align-items: start;
+}
+
+@media (min-width: 768px) {
+  .viewGrid {
+    grid-template-columns: 1fr 400px;
+  }
+}
+
+.title {
+  font-size: 36px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  margin-bottom: 12px;
+}
+
+@media (min-width: 768px) {
+  .title {
+    font-size: 40px;
+  }
+}
+
+.specialtyTag {
+  display: inline-block;
+  background: var(--du-black);
+  color: var(--du-white);
+  font-size: 12px;
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-weight: 600;
+  margin-bottom: 24px;
+}
+
+.sectionHeading {
+  font-size: 20px;
+  font-weight: 700;
+  border-bottom: 1px solid var(--du-gray-200);
+  padding-bottom: 8px;
+  margin-bottom: 16px;
+}
+
+.description {
+  color: var(--du-gray-700);
+  white-space: pre-line;
+  line-height: 1.7;
+}
+
+/* --- Сайдбар автора --- */
+.authorSidebar {
+  background: var(--du-white);
+  padding: 24px;
+}
+
+@media (min-width: 768px) {
+  .authorSidebar {
+    position: sticky;
+    top: 24px;
+  }
+}
+
+.authorSidebarHeaderRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.authorSidebarTitle {
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.messagesLink {
+  font-size: 14px;
+  color: var(--du-blue);
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.messagesLink:hover {
+  text-decoration: underline;
+}
+
+.emptyHint {
+  font-size: 14px;
+  color: var(--du-gray-500);
+  font-style: italic;
+}
+
+.applicationRows {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.applicationRow {
+  background: rgba(231, 238, 243, 1);
+  padding: 16px;
+}
+
+.applicationRowTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.applicantNameButton {
+  font-weight: 600;
+  font-size: 14px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+}
+
+.applicantNameButton:hover {
+  text-decoration: underline;
+}
+
+.writeButton {
+  font-size: 12px;
+  color: var(--du-blue);
+  font-weight: 500;
+  background: none;
+  border: none;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.writeButton:hover {
+  text-decoration: underline;
+}
+
+.applicationRoleText {
+  font-size: 12px;
+  color: var(--du-gray-500);
+  margin-bottom: 12px;
+}
+
+.applicationActions {
+  display: flex;
+  gap: 8px;
+}
+
+.statusTag {
+  font-size: 12px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 9999px;
+}
+
+.statusConfirmed {
+  composes: statusTag;
+  background: #059669;
+  color: #fff;
+}
+
+.statusRejected {
+  composes: statusTag;
+  background: #dc2626;
+  color: #fff;
+}
+
+/* --- Сайдбар гостя/кандидата --- */
+.guestBox {
+  background: var(--du-white);
+  border: 2px solid rgba(0, 0, 0, 1);
+}
+
+@media (min-width: 768px) {
+  .guestBox {
+    position: sticky;
+    top: 24px;
+  }
+}
+
+.guestPad {
+  padding: 24px;
+}
+
+.guestTitle {
+  font-family: "Diya", var(--font-manrope), sans-serif;
+  font-weight: 600;
+  font-size: 38px;
+  line-height: 40px;
+}
+
+.guestTitleMb {
+  composes: guestTitle;
+  margin-bottom: 8px;
+}
+
+.guestText {
+  font-size: 14px;
+  color: var(--du-gray-500);
+}
+
+.sectionInner {
+  width: 352px;
+  border-bottom: 2px solid rgba(0, 0, 0, 1);
+  padding-bottom: 16px;
+}
+
+.rolesHint {
+  font-family: "Diya", var(--font-manrope), sans-serif;
+  font-weight: 600;
+  font-size: 12px;
+  line-height: 16px;
+  letter-spacing: -0.24px;
+  vertical-align: middle;
+  color: rgba(100, 116, 139, 1);
+  margin-bottom: 16px;
+}
+
+.applyRoles {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.applyRoleButton {
+  text-align: left;
+  font-size: 14px;
+  padding: 10px 16px;
+  border-radius: 9999px;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.appliedRolesBox {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.appliedRoleRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  background: var(--du-white);
+  border-radius: 9999px;
+  padding: 6px 6px 6px 16px;
+}
+
+.sentBanner {
+  text-align: center;
+  font-size: 14px;
+  font-weight: 500;
+  padding: 16px;
+  background: rgba(255, 247, 219, 1);
+  color: #1a1a1a;
+}
+
+.sentBannerMt {
+  composes: sentBanner;
+  margin-top: 16px;
+}

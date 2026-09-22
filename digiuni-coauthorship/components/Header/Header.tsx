@@ -1,10 +1,11 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useRef, useState, useCallback } from "react";
-import { LogoMark } from "./Logo";
+import { LogoMark } from "../Logo/Logo";
 import { api, useAuth } from "@/context/AuthContext";
-import { GlobeIcon } from "@/components/icons";
+import { GlobeIcon } from "@/components/icons/icons";
 import type { Profile } from "@/types/course";
+import styles from "./Header.module.css";
 
 type Conversation = { unreadCount: number };
 
@@ -70,75 +71,61 @@ export function Header() {
 
   return (
     <header>
-      <div className="max-w-[1440px] mx-auto px-20 py-4 flex items-center justify-between gap-6">
-        <div className="flex items-center gap-6">
-          <Link href="/" className="flex items-center gap-2.5 shrink-0">
+      <div className={styles.container}>
+        <div className={styles.brandNav}>
+          <Link href="/" className={styles.logoLink}>
             <LogoMark />
-            <span className="text-lg font-extrabold tracking-tight">
-              DIGIUNI
-            </span>
+            <span className={styles.logoText}>DIGIUNI</span>
           </Link>
 
-          <nav className="hidden lg:flex items-center gap-7">
+          <nav className={styles.nav}>
             {NAV_LINKS.map((link) => (
-              <a
-                key={link.label}
-                href={link.href}
-                className="text-sm font-medium text-du-black hover:text-du-blue transition-colors"
-              >
+              <a key={link.label} href={link.href} className={styles.navLink}>
                 {link.label}
               </a>
             ))}
           </nav>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0">
-          <span className="hidden md:inline-flex items-center gap-1.5 text-sm font-medium text-du-gray-700">
+        <div className={styles.rightSide}>
+          <span className={styles.globalVersion}>
             <GlobeIcon className="w-4 h-4" /> Global version
           </span>
 
           {isLoading ? null : user ? (
-            <div className="relative" ref={menuRef}>
+            <div className={styles.profileWrapper} ref={menuRef}>
               <button
                 onClick={() => setMenuOpen((v) => !v)}
-                className="relative btn-pill btn-pill-outline text-sm py-2 px-5"
+                className={`${styles.profileButton} btn-pill btn-pill-outline text-sm py-2 px-5`}
               >
                 {displayName || "Профіль"}
-                {unreadCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-3 h-3 rounded-full bg-red-600 border-2 border-du-white" />
-                )}
+                {unreadCount > 0 && <span className={styles.unreadDot} />}
               </button>
 
               {menuOpen && (
-                <div className="absolute right-0 top-[calc(100%+8px)] w-[185px] h-[166px] bg-du-white shadow-lg border border-du-gray-200 flex flex-col z-50">
-                  <a
-                    href="#"
-                    className="flex-1 flex items-center px-4 text-sm font-medium text-du-black hover:bg-du-gray-50"
-                  >
+                <div className={styles.dropdown}>
+                  <a href="#" className={styles.dropdownItem}>
                     Перейти в Moodle
                   </a>
-                  <div className="w-[169px] h-[2px] bg-du-gray-200 mx-auto shrink-0" />
+                  <div className={styles.dropdownDivider} />
                   <Link
                     href="/shared-development"
                     onClick={() => setMenuOpen(false)}
-                    className="flex-1 flex items-center px-4 text-sm font-medium text-du-black hover:bg-du-gray-50"
+                    className={styles.dropdownItem}
                   >
                     Спільна розробка
                   </Link>
-                  <div className="w-[169px] h-[2px] bg-du-gray-200 mx-auto shrink-0" />
-                  <a
-                    href="#"
-                    className="flex-1 flex items-center px-4 text-sm font-medium text-du-black hover:bg-du-gray-50"
-                  >
+                  <div className={styles.dropdownDivider} />
+                  <a href="#" className={styles.dropdownItem}>
                     Моє портфоліо
                   </a>
-                  <div className="w-[169px] h-[2px] bg-du-gray-200 mx-auto shrink-0" />
+                  <div className={styles.dropdownDivider} />
                   <button
                     onClick={() => {
                       setMenuOpen(false);
                       logout();
                     }}
-                    className="flex-1 flex items-center text-left px-4 text-sm font-medium text-du-black hover:bg-du-gray-50"
+                    className={styles.dropdownItem}
                   >
                     Вийти
                   </button>
@@ -163,15 +150,15 @@ export type BreadcrumbItem = { label: string; href?: string };
 
 export function ModuleBreadcrumb({ items }: { items: BreadcrumbItem[] }) {
   return (
-    <div className="max-w-[1440px] mx-auto w-full px-20 pt-6 text-sm text-du-gray-500 flex items-center gap-2 flex-wrap">
-      <Link href="/" className="hover:text-du-black">
+    <div className={styles.breadcrumb}>
+      <Link href="/" className={styles.breadcrumbLink}>
         Головна
       </Link>
       {items.map((item, i) => (
-        <span key={i} className="flex items-center gap-2">
+        <span key={i} className={styles.breadcrumbSegment}>
           <span>|</span>
           {item.href ? (
-            <Link href={item.href} className="hover:text-du-black">
+            <Link href={item.href} className={styles.breadcrumbLink}>
               {item.label}
             </Link>
           ) : (

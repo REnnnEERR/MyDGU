@@ -1,0 +1,155 @@
+.container {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 16px 80px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.brandNav {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+.logoLink {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.logoText {
+  font-size: 18px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.nav {
+  display: none;
+  align-items: center;
+  gap: 28px;
+}
+
+@media (min-width: 1024px) {
+  .nav {
+    display: flex;
+  }
+}
+
+.navLink {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--du-black);
+  transition: color 0.15s ease;
+}
+
+.navLink:hover {
+  color: var(--du-blue);
+}
+
+.rightSide {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.globalVersion {
+  display: none;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--du-gray-700);
+}
+
+@media (min-width: 768px) {
+  .globalVersion {
+    display: inline-flex;
+  }
+}
+
+.profileWrapper {
+  position: relative;
+}
+
+.profileButton {
+  position: relative;
+}
+
+.unreadDot {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 12px;
+  height: 12px;
+  border-radius: 9999px;
+  background: #dc2626;
+  border: 2px solid var(--du-white);
+}
+
+.dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  width: 185px;
+  height: 166px;
+  background: var(--du-white);
+  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--du-gray-200);
+  display: flex;
+  flex-direction: column;
+  z-index: 50;
+}
+
+.dropdownItem {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--du-black);
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.dropdownItem:hover {
+  background: var(--du-gray-50);
+}
+
+.dropdownDivider {
+  width: 169px;
+  height: 2px;
+  background: var(--du-gray-200);
+  margin: 0 auto;
+  flex-shrink: 0;
+}
+
+.breadcrumb {
+  max-width: 1440px;
+  margin: 0 auto;
+  width: 100%;
+  padding: 24px 80px 0;
+  font-size: 14px;
+  color: var(--du-gray-500);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.breadcrumbLink:hover {
+  color: var(--du-black);
+}
+
+.breadcrumbSegment {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
