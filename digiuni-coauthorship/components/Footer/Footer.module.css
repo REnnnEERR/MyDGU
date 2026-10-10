@@ -7,26 +7,30 @@
 .container {
   max-width: 1440px;
   margin: 0 auto;
-  padding: 48px 80px;
+  padding: 40px 80px 48px;
+  border-top: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-.columns {
+.columnsRow {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 32px;
+  grid-template-columns: repeat(4, auto);
+  justify-content: space-between;
+  gap: 40px 24px;
   margin-bottom: 40px;
 }
 
-@media (min-width: 768px) {
-  .columns {
-    grid-template-columns: repeat(3, 1fr);
+@media (max-width: 900px) {
+  .columnsRow {
+    grid-template-columns: repeat(2, auto);
+    justify-content: start;
+    gap: 40px 64px;
   }
 }
 
 .columnList {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 16px;
 }
 
 .columnLink {
@@ -37,6 +41,43 @@
 
 .columnLink:hover {
   color: var(--du-white);
+}
+
+.socialColumn {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.socialLabel {
+  font-size: 14px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+.socialIcons {
+  display: flex;
+  gap: 12px;
+}
+
+.socialIconButton {
+  width: 36px;
+  height: 36px;
+  border-radius: 9999px;
+  border: 1.5px solid var(--du-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--du-white);
+  background: transparent;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.socialIconButton:hover {
+  background: var(--du-white);
+  color: var(--du-black);
 }
 
 .bottom {
@@ -51,9 +92,5 @@
   font-size: 12px;
   color: rgba(255, 255, 255, 0.6);
   line-height: 1.6;
-  max-width: 672px;
-}
-
-.bottomTextSpacer {
-  margin-top: 8px;
+  max-width: 720px;
 }

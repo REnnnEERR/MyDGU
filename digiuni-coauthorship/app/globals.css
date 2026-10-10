@@ -151,52 +151,37 @@ body {
 }
 
 @font-face {
-  font-family: "Diya Head";
-  src: url("/fonts/e-ukraine-head/e-UkraineHead-Thin.otf") format("opentype");
-  font-weight: 100;
+  font-family: "Diya";
+  src: url("/fonts/diya/Diya-Regular500.otf") format("opentype");
+  font-weight: 500;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: "Diya Head";
-  src: url("/fonts/e-ukraine-head/e-UkraineHead-UltraLight.otf")
-    format("opentype");
-  font-weight: 200;
+  font-family: "Diya";
+  src: url("/fonts/diya/Diya-600.otf") format("opentype");
+  font-weight: 600;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: "Diya Head";
-  src: url("/fonts/e-ukraine-head/e-UkraineHead-Light.otf") format("opentype");
-  font-weight: 300;
+  font-family: "Diya";
+  src: url("/fonts/diya/Diya-720.otf") format("opentype");
+  font-weight: 720;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: "Diya Head";
-  src: url("/fonts/e-ukraine-head/e-UkraineHead-Regular.otf") format("opentype");
-  font-weight: 400;
+  font-family: "Diya";
+  src: url("/fonts/diya/Diya-860.otf") format("opentype");
+  font-weight: 860;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: "Diya Head";
-  src: url("/fonts/e-ukraine-head/e-UkraineHead-Medium.otf") format("opentype");
-  font-weight: 500 600;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Diya Head";
-  src: url("/fonts/e-ukraine-head/e-UkraineHead-Bold.otf") format("opentype");
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Diya Logo";
-  src: url("/fonts/e-ukraine-head/e-UkraineHead-LOGO.otf") format("opentype");
-  font-weight: 400;
+  font-family: "Diya";
+  src: url("/fonts/diya/Diya-Black1000.otf") format("opentype");
+  font-weight: 1000;
   font-style: normal;
   font-display: swap;
 }
